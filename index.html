@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mr. Control</title>
+<meta name="description" content="Mr. Control: controle de consumo de suplemento a pasto a partir das Folhas de Suplementação.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%232D5B8A%22/%3E%3Ctext x=%2232%22 y=%2242%22 font-family=%22Arial%22 font-weight=%22700%22 font-size=%2226%22 fill=%22white%22 text-anchor=%22middle%22%3EMC%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* Layout: barra de filtros fixa + abas; cada aba é um painel de cartões em grade que vira coluna única no celular. */
+:root{
+  --bg:#F3F4F1; --surface:#FFFFFF; --ink:#1D2622; --muted:#5E6B65; --line:#DCE1DC;
+  --accent:#2D5B8A; --accent-soft:#E4ECF5;
+  --ok:#2E8552; --ok-soft:#E1F1E7; --high:#C2412F; --high-soft:#F8E3DF; --low:#C98516; --low-soft:#F8EDD8; --none:#8A938F; --none-soft:#ECEEEC;
+  --band:rgba(46,133,82,.13);
+  --display:"IBM Plex Sans Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141A18; --surface:#1C2421; --ink:#E5EBE7; --muted:#9AA8A1; --line:#2E3934;
+  --accent:#7FA9D6; --accent-soft:#22303F;
+  --ok:#5CBF84; --ok-soft:#1E3327; --high:#E8735F; --high-soft:#3A2420; --low:#E6AE4F; --low-soft:#3A2F1B; --none:#7D8883; --none-soft:#262E2B;
+  --band:rgba(92,191,132,.16); color-scheme:dark;}}
+:root[data-theme="dark"]{
+  --bg:#141A18; --surface:#1C2421; --ink:#E5EBE7; --muted:#9AA8A1; --line:#2E3934;
+  --accent:#7FA9D6; --accent-soft:#22303F;
+  --ok:#5CBF84; --ok-soft:#1E3327; --high:#E8735F; --high-soft:#3A2420; --low:#E6AE4F; --low-soft:#3A2F1B; --none:#7D8883; --none-soft:#262E2B;
+  --band:rgba(92,191,132,.16); color-scheme:dark;}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--body)}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:24px;font-weight:700}
+h2{font-size:18px;font-weight:600}
+h3{font-size:14px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.num,td.n,th.n{font-variant-numeric:tabular-nums}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1280px;margin:0 auto;padding:0 16px}
+header.top{background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding-top:14px;padding-bottom:14px}
+.brand{display:flex;flex-direction:column;gap:2px;margin-right:auto}
+.brand small{color:var(--muted);font-size:13px}
+.btn{border:1px solid var(--line);background:var(--surface);padding:8px 14px;border-radius:8px;font-weight:500}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+:root[data-theme="dark"] .btn.primary{color:#0F1714}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn.primary{color:#0F1714}}
+.source{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.notice{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:14px 0 0;padding:10px 14px;border-radius:8px;background:var(--accent-soft);font-size:14px}
+.notice.warn{background:var(--low-soft)}
+.filters{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+@media (max-width:700px){.filters{position:static}}
+.filters .wrap{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:end;padding-top:10px;padding-bottom:10px}
+.field{display:flex;flex-direction:column;gap:2px;min-width:120px;flex:1 1 120px;max-width:200px}
+.field label{font-size:12px;color:var(--muted)}
+.field select,.field input{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;padding-top:14px}
+nav.tabs a{padding:8px 14px;border-radius:8px 8px 0 0;color:var(--muted);text-decoration:none;font-weight:500;white-space:nowrap;border-bottom:2px solid transparent}
+nav.tabs a[aria-current="page"]{color:var(--ink);border-bottom-color:var(--accent);background:var(--surface)}
+main{padding:16px 0 48px}
+section.view{display:none;gap:16px}
+section.view.on{display:grid}
+.grid{display:grid;gap:16px}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:900px){.g4{grid-template-columns:repeat(2,minmax(0,1fr))}.g3,.g2{grid-template-columns:1fr}}
+@media (max-width:420px){.g4{grid-template-columns:1fr}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;min-width:0;display:flex;flex-direction:column;gap:10px}
+.card p.note{margin:0;color:var(--muted);font-size:13px;max-width:70ch}
+.kpi .v{font:600 30px/1.1 var(--display);font-variant-numeric:tabular-nums}
+.kpi .s{font-size:13px;color:var(--muted)}
+.kpi{border-left:4px solid var(--line)}
+.kpi.ok{border-left-color:var(--ok)}.kpi.high{border-left-color:var(--high)}.kpi.low{border-left-color:var(--low)}.kpi.acc{border-left-color:var(--accent)}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.p-ok{background:var(--ok-soft);color:var(--ok)}.p-high{background:var(--high-soft);color:var(--high)}.p-low{background:var(--low-soft);color:var(--low)}.p-none{background:var(--none-soft);color:var(--none)}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-weight:600;color:var(--muted);font-size:12px;white-space:nowrap;position:sticky;top:0;background:var(--surface)}
+td.n,th.n{text-align:right;white-space:nowrap}
+tr.click{cursor:pointer}tr.click:hover td{background:var(--accent-soft)}
+.heat td.c{text-align:center;font-variant-numeric:tabular-nums;min-width:62px;border:2px solid var(--surface);border-radius:4px}
+.heat td.c.ok{background:var(--ok-soft);color:var(--ok)}.heat td.c.high{background:var(--high-soft);color:var(--high)}.heat td.c.low{background:var(--low-soft);color:var(--low)}.heat td.c.none{background:var(--none-soft);color:var(--none)}
+.heat td.r{font-weight:600}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--muted);align-items:center}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-2px}
+.bullet{display:grid;grid-template-columns:minmax(90px,150px) 1fr 70px;gap:8px;align-items:center;font-size:13px}
+.bullet .track{position:relative;height:18px;background:var(--none-soft);border-radius:4px}
+.bullet .band{position:absolute;top:0;bottom:0;background:var(--band);border-left:1px dashed var(--ok);border-right:1px dashed var(--ok)}
+.bullet .bar{position:absolute;top:5px;height:8px;left:0;border-radius:3px}
+.bullet .meta{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--ink)}
+svg text{fill:var(--muted);font:11px var(--body)}
+svg .axis{stroke:var(--line)}
+.empty{color:var(--muted);font-size:14px;padding:12px 0}
+.drop{border:2px dashed var(--line);border-radius:10px;padding:18px;text-align:center;color:var(--muted)}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.cfg td input{width:100%;min-width:70px;padding:4px 6px;border:1px solid var(--line);border-radius:4px;background:var(--surface)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.small{font-size:12px;color:var(--muted)}
+.cap{border-left:5px solid var(--line)}.cap.high{border-left-color:var(--high)}.cap.low{border-left-color:var(--low)}.cap.stale{border-left-color:var(--accent)}
+.cap .big{font:600 22px/1.2 var(--display)}.cap ul{margin:0;padding-left:18px;font-size:15px}
+.cap li{margin:4px 0}
+td.ind{padding-left:24px;color:var(--muted)}tr.grp td{background:var(--accent-soft);font-weight:600}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:14px;display:none;max-width:90vw}
+@media (prefers-reduced-motion:no-preference){.btn{transition:border-color .15s}}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <h1>Mr. Control</h1>
+      <small id="srcLabel">Exemplo fictício</small>
+    </div>
+    <div class="source">
+      <input type="file" id="files" accept=".xlsx,.xlsm,.xls" multiple hidden>
+      <button class="btn primary" id="pick">Abrir planilhas</button>
+      <button class="btn" id="demo">Exemplo fictício</button>
+      <button class="btn" id="export">Baixar base calculada</button>
+    </div>
+  </div>
+</header>
+
+<div class="filters" aria-label="Filtros">
+  <div class="wrap">
+    <div class="field"><label for="fAno">Ano</label><select id="fAno"></select></div>
+    <div class="field"><label for="fMes">Mês</label><select id="fMes"></select></div>
+    <div class="field"><label for="fRet">Retiro</label><select id="fRet"></select></div>
+    <div class="field"><label for="fProd">Produto</label><select id="fProd"></select></div>
+    <div class="field"><label for="fPer">Período</label><select id="fPer"></select></div>
+    <div class="field"><label for="fCat">Categoria</label><select id="fCat"></select></div>
+    <button class="btn" id="clear">Limpar filtros</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <div id="msg" class="notice" role="status">Mostrando dados fictícios. Clique em <b>Abrir planilhas</b> e selecione as "Folha Suplementação" (pode selecionar várias de uma vez, de meses e anos diferentes). Os arquivos são lidos só neste navegador.</div>
+  <nav class="tabs" aria-label="Telas">
+    <a href="#visao">Visão geral</a>
+    <a href="#relatorio">Relatório</a>
+    <a href="#pastos">Pastos</a>
+    <a href="#capatazes">Capatazes</a>
+    <a href="#tendencia">Histórico</a>
+    <a href="#logistica">Logística</a>
+    <a href="#auditoria">Auditoria</a>
+    <a href="#ajustes">Ajustes</a>
+  </nav>
+</div>
+
+<main class="wrap">
+  <!-- VISÃO GERAL -->
+  <section class="view" id="v-visao">
+    <div class="grid g4" id="kpis"></div>
+    <div class="grid g2">
+      <div class="card"><h2>Consumo por retiro</h2><p class="note">Barra = consumo real (kg/cab/dia). Faixa verde = tolerância da meta; traço = meta.</p><div id="bullets"></div></div>
+      <div class="card"><h2>Situação dos pastos</h2><p class="note">Cada pasto avaliado no período, pelo consumo acumulado contra a faixa da meta.</p><div id="donut"></div></div>
+    </div>
+    <div class="card"><h2>Resumo por retiro</h2><div class="scroll" id="tRetiro"></div></div>
+  </section>
+
+  <!-- RELATÓRIO -->
+  <section class="view" id="v-relatorio">
+    <div class="card"><h2>Relatório por retiro e produto</h2>
+      <p class="note">Animais = média de cabeças no período. Peso médio ponderado pelo número de animais de cada linha da planilha. Lotação em UA/ha pelo mapa de gado do último mês do retiro.</p>
+      <div class="scroll" id="tRel"></div></div>
+    <div class="card"><h2>Por categoria</h2><div class="scroll" id="tCat"></div></div>
+  </section>
+
+  <!-- PASTOS -->
+  <section class="view" id="v-pastos">
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><h2>Mapa de consumo: pasto × mês</h2>
+        <div class="legend"><span><i style="background:var(--ok-soft);outline:1px solid var(--ok)"></i>Dentro</span><span><i style="background:var(--high-soft);outline:1px solid var(--high)"></i>Acima</span><span><i style="background:var(--low-soft);outline:1px solid var(--low)"></i>Abaixo</span><span><i style="background:var(--none-soft)"></i>Sem meta</span></div></div>
+      <p class="note">Valores em kg/cab/dia. Clique num pasto para ver os tratos dele.</p>
+      <div class="scroll heat" id="heat"></div>
+    </div>
+    <div class="grid g2">
+      <div class="card"><h2>Mais acima da meta</h2><div class="scroll" id="rkHigh"></div></div>
+      <div class="card"><h2>Mais abaixo da meta</h2><div class="scroll" id="rkLow"></div></div>
+    </div>
+    <div class="card" id="pastoDet" hidden></div>
+  </section>
+
+  <!-- TENDÊNCIA -->
+  <section class="view" id="v-tendencia">
+    <div class="card"><h2>Consumo × meta, mês a mês</h2><p class="note">Linha = consumo real; faixa = tolerância da meta. Respeita os filtros de retiro, produto, período e categoria.</p><div id="line"></div></div>
+    <div class="grid g2" style="align-items:start">
+      <div class="card"><h2>Animais suplementados por mês</h2><div id="barAnim"></div></div>
+      <div class="card"><h2>Lotação por mês (UA/ha)</h2><div id="barLot"></div></div>
+    </div>
+    <div class="card"><h2>Mesmo mês, anos diferentes</h2><p class="note">Consumo real (kg/cab/dia) por mês e ano. Útil a partir do segundo ano de planilhas.</p><div class="scroll" id="yoy"></div></div>
+    <div class="grid g2" style="align-items:start">
+      <div class="card"><h2>Seca × Águas</h2><div id="season"></div></div>
+      <div class="card"><h2>Consistência do cocho</h2><p class="note">Variação do consumo entre tratos (CV). Valores altos sugerem falha de abastecimento ou de cocho.</p><div class="scroll" id="cv"></div></div>
+    </div>
+  </section>
+
+  <!-- CAPATAZES -->
+  <section class="view" id="v-capatazes">
+    <div class="card cap-head"><div class="row" style="justify-content:space-between"><h2 id="capTit">Pastos que pedem atenção</h2><span class="small" id="capRef"></span></div>
+      <p class="note">Mês de referência: o mês filtrado ou, sem filtro, o último mês com dados. Dias sem trato contados até a data mais recente lançada no retiro.</p></div>
+    <div class="grid g3" id="capCards"></div>
+  </section>
+
+  <!-- LOGÍSTICA -->
+  <section class="view" id="v-logistica">
+    <div class="grid g4" id="kLog"></div>
+    <div class="card"><h2>Conciliação saída de fábrica × fornecido</h2><p class="note">Verde: fornecido entre 90% e 110% da saída. Estoque teórico positivo = saiu da fábrica e não foi lançado no cocho.</p><div class="scroll" id="concil"></div></div>
+    <div class="grid g2">
+      <div class="card"><h2>Previsão de sacos para o próximo mês</h2><p class="note" id="prevNote"></p><div class="scroll" id="prev"></div></div>
+      <div class="card"><h2>Custo</h2><p class="note">Preencha o preço por kg em Ajustes. Excedente = kg consumidos acima do limite máximo.</p><div class="grid g2" id="cost"></div></div>
+    </div>
+  </section>
+
+  <!-- AUDITORIA -->
+  <section class="view" id="v-auditoria">
+    <div class="grid g4" id="kAud"></div>
+    <div class="card"><div class="row" style="justify-content:space-between"><h2>Lançamentos com alerta</h2><div class="field" style="max-width:260px"><label for="fAlert">Tipo de alerta</label><select id="fAlert"></select></div></div>
+      <p class="note">Corrija na planilha de origem e abra de novo. "Mudança de cabeças" pode ser troca de lote legítima.</p>
+      <div class="scroll" id="aud" style="max-height:560px"></div></div>
+  </section>
+
+  <!-- AJUSTES -->
+  <section class="view" id="v-ajustes">
+    <div class="card">
+      <h2>Produtos</h2>
+      <p class="note">A meta de cada trato é peso estimado × % do peso vivo. O produto é reconhecido quando o "Tipo de sal" da planilha contém o texto da primeira coluna (a primeira linha que bater vale). Preço em R$/kg.</p>
+      <div class="scroll"><table class="cfg" id="cfgProd"></table></div>
+      <div class="row"><button class="btn" id="addProd">Adicionar produto</button><button class="btn" id="resetCfg">Voltar ao padrão</button></div>
+    </div>
+    <div class="card">
+      <h2>Regras de cálculo</h2>
+      <div class="grid g3" id="cfgRules"></div>
+      <p class="note">O consumo de cada trato é dividido pelos dias até o próximo trato do mesmo pasto, mesmo que ele esteja na planilha do mês seguinte. Na virada do mês, os dias de cada mês usam as cabeças daquele mês. Intervalos acima do limite são tratados como pasto vazio e não entram no consumo.</p>
+      <div class="row"><button class="btn primary" id="applyCfg">Aplicar</button><span class="small">Os ajustes ficam salvos neste navegador.</span></div>
+    </div>
+    <div class="card">
+      <h2>Formato esperado da planilha</h2>
+      <p class="note">Uma aba por retiro. Linha 3, coluna B: retiro. Linha 4: mês. Linha 5: saída de fábrica (B) e animais por produto (F = MUB, G = Adensado, H a L = 0.1 a 0.5). Linha 7: cabeçalho com Pasto, Quant. Animais, Peso Estimado, Categoria, Tipo de sal, Área Retiro e uma coluna por data. Cada célula de data recebe o número de sacos fornecidos.</p>
+      <div class="drop" id="drop">Arraste as planilhas para cá</div>
+    </div>
+  </section>
+</main>
+<div id="toast" role="status"></div>
+
+<script>
+"use strict";
+/* ======================= CONFIGURAÇÃO ======================= */
+const MESES=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const DEFAULT_CFG={
+  produtos:[
+    {chave:"ADENSADO",pv:0.05,saco:30,preco:null},
+    {chave:"MUB",pv:0.05,saco:50,preco:null},
+    {chave:"0.1",pv:0.1,saco:30,preco:null},
+    {chave:"0.2",pv:0.2,saco:30,preco:null},
+    {chave:"0.3",pv:0.3,saco:30,preco:null},
+    {chave:"0.4",pv:0.4,saco:30,preco:null},
+    {chave:"0.5",pv:0.5,saco:30,preco:null}
+  ],
+  tolerancia:25, diasMax:30, fatorAlto:3, mudanca:30, mesesSeca:[5,6,7,8,9], pesoUA:450
+};
+let CFG=loadCfg();
+function loadCfg(){try{const s=localStorage.getItem("mrcontrol-cfg");if(s){const c=JSON.parse(s);return Object.assign(structuredClone(DEFAULT_CFG),c);}}catch(e){}return structuredClone(DEFAULT_CFG);}
+function saveCfg(){try{localStorage.setItem("mrcontrol-cfg",JSON.stringify(CFG));}catch(e){}}
+
+/* ======================= LEITURA DA PLANILHA ======================= */
+const up=v=>v==null?null:(String(v).trim().replace(/\s+/g," ").toUpperCase()||null);
+const norm=s=>String(s??"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"");
+function toNum(v){if(v==null||v==="")return null;if(typeof v==="number")return isFinite(v)?v:null;let t=String(v).trim();if(!t||t==="-")return null;if(t.includes(",")&&t.includes("."))t=t.replace(/\./g,"").replace(",",".");else t=t.replace(",",".");const n=Number(t);return isFinite(n)?n:null;}
+function toDate(v){
+  if(v==null||v==="")return null;
+  if(v instanceof Date&&!isNaN(v))return new Date(Date.UTC(v.getFullYear(),v.getMonth(),v.getDate()));
+  if(typeof v==="number"&&v>20000&&v<80000){const d=new Date(Math.round((v-25569)*864e5));return new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),d.getUTCDate()));}
+  const m=String(v).trim().match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  if(m){let y=+m[3];if(y<100)y+=2000;return new Date(Date.UTC(y,+m[2]-1,+m[1]));}
+  return null;
+}
+function mesNum(nome){const n=norm(nome);const k=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];for(let i=0;i<12;i++)if(n.includes(k[i]))return i+1;return 0;}
+function properMes(nome){const n=mesNum(nome);return n?MESES[n-1]:(nome==null?null:String(nome).trim());}
+
+/* Reproduz a função ModeloFormatação: uma aba = um retiro num mês */
+function parseSheet(aoa,arquivo,aba){
+  const cell=(r,c)=>(aoa[r]&&aoa[r][c]!==undefined)?aoa[r][c]:null;
+  const retiro=up(cell(2,1)), mesRaw=cell(3,1), saida=toNum(cell(4,1)), areaHdr=toNum(cell(5,1));
+  const animProd={"MUB":toNum(cell(4,5)),"ADENSADO":toNum(cell(4,6)),"0.1":toNum(cell(4,7)),"0.2":toNum(cell(4,8)),"0.3":toNum(cell(4,9)),"0.4":toNum(cell(4,10)),"0.5":toNum(cell(4,11))};
+  const mapa=Object.values(animProd).reduce((a,b)=>a+(b||0),0);
+  const hdr=aoa[6]||[];
+  const idx={};const dateCols=[];
+  hdr.forEach((h,i)=>{const k=norm(h);
+    if(k==="pasto")idx.pasto=i;else if(k.startsWith("quantanimais")||k==="quantidadeanimais")idx.qtd=i;
+    else if(k.startsWith("pesoestimado")||k==="peso")idx.peso=i;else if(k==="categoria")idx.cat=i;
+    else if(k.startsWith("tipodesal")||k==="produto")idx.tipo=i;else if(k.startsWith("arearetiro")||k==="area")idx.area=i;
+    else{const d=toDate(h);if(d)dateCols.push([i,d]);}
+  });
+  if(idx.pasto==null||!retiro)return {rows:[],erro:`Aba "${aba}" de ${arquivo}: não encontrei o retiro (B3) ou a coluna Pasto na linha 7.`};
+  const mn=mesNum(mesRaw);
+  const rows=[];let id=0;
+  for(let r=7;r<aoa.length;r++){
+    const p=cell(r,idx.pasto);if(p==null||String(p).trim()==="")continue;id++;
+    const base={arquivo,aba,retiro,mesNome:properMes(mesRaw),mesNum:mn,saida,areaHdr,animProd,mapa,id,
+      pasto:up(typeof p==="number"?String(p):p),qtd:toNum(cell(r,idx.qtd)),peso:toNum(cell(r,idx.peso)),
+      cat:up(cell(r,idx.cat)),tipo:up(cell(r,idx.tipo)),area:toNum(cell(r,idx.area))};
+    for(const [c,d] of dateCols){const v=toNum(cell(r,c));if(v==null)continue;rows.push(Object.assign({data:d,sacos:v},base));}
+  }
+  return {rows,erro:null};
+}
+function parseWorkbook(wb,arquivo){
+  const out=[],erros=[];
+  for(const aba of wb.SheetNames){
+    const aoa=XLSX.utils.sheet_to_json(wb.Sheets[aba],{header:1,raw:true,defval:null});
+    const {rows,erro}=parseSheet(aoa,arquivo,aba);if(erro)erros.push(erro);out.push(...rows);
+  }
+  return {rows:out,erros};
+}
+
+/* ======================= MOTOR DE CÁLCULO ======================= */
+const DAY=864e5;
+const ymd=d=>d.toISOString().slice(0,10);
+const endOfMonth=d=>new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0));
+function produtoDe(tipo){if(!tipo)return null;for(const p of CFG.produtos){if(p.chave&&tipo.includes(String(p.chave).toUpperCase()))return p;}return null;}
+function median(a){if(!a.length)return null;const s=[...a].sort((x,y)=>x-y),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2;}
+
+function compute(raw){
+  const tol=CFG.tolerancia/100;
+  const R=raw.map(r=>{
+    const prod=produtoDe(r.tipo);
+    const pesoSaco=prod?prod.saco:(r.tipo&&r.tipo.includes("MUB")?50:30);
+    const meta=(prod&&r.peso>0&&prod.pv>0)?r.peso*prod.pv/100:null;
+    let ano=r.data.getUTCFullYear();const dm=r.data.getUTCMonth()+1;
+    const mN=r.mesNum||dm;const dif=mN-dm;if(dif<-6)ano++;else if(dif>6)ano--;
+    return Object.assign({},r,{prod,pesoSaco,kg:r.sacos*pesoSaco,meta,lmin:meta!=null?meta*(1-tol):null,lmax:meta!=null?meta*(1+tol):null,
+      preco:prod&&prod.preco!=null?prod.preco:null,ano,mesNum:mN,mesKey:ano*100+mN,mes:`${MESES[mN-1]}/${ano}`,
+      periodo:CFG.mesesSeca.includes(mN)?"Seca":"Águas",catP:catPad(r.cat)});
+  });
+  // por Retiro + Pasto, através de todos os meses
+  const groups=new Map();
+  for(const r of R){const k=r.retiro+"|"+r.pasto;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(r);}
+  for(const [k,g] of groups){
+    const qByDate=new Map();const cnt=new Map();
+    for(const r of g){const t=r.data.getTime();qByDate.set(t,Math.max(qByDate.get(t)??-Infinity,r.qtd??-Infinity));cnt.set(t,(cnt.get(t)||0)+1);}
+    const datas=[...qByDate.keys()].sort((a,b)=>a-b);
+    const med=median(g.map(r=>r.sacos).filter(v=>v!=null));
+    for(const r of g){
+      const t=r.data.getTime();const i=datas.indexOf(t);const nx=i>=0&&i<datas.length-1?datas[i+1]:null;
+      r.chave=k;r.lancDia=cnt.get(t);r.medSacos=med;
+      r.prox=nx?new Date(nx):null;
+      let q=nx?qByDate.get(nx):null;r.qProx=(q==null||q===-Infinity)?null:q;
+      r.dias=nx?Math.round((nx-t)/DAY):null;
+      r.stInt=r.dias==null?"Em aberto":(r.dias>CFG.diasMax?"Pasto vazio / quebra":"Válido");
+      r.cabDia=null;r.diasV=null;r.kgV=null;r.cons=null;r.varCab=null;
+      if(r.stInt==="Válido"&&r.qtd>0){
+        const dMes=Math.min(r.dias,Math.round((endOfMonth(r.data)-r.data)/DAY)+1);
+        const qp=(r.qProx>0)?r.qProx:r.qtd;
+        r.cabDia=r.qtd*dMes+qp*(r.dias-dMes);r.diasV=r.dias;r.kgV=r.kg;r.cons=r.kgV/r.cabDia;
+        if(r.qProx!=null)r.varCab=r.qProx/r.qtd-1;
+      }
+      r.status=r.cons==null?"Sem cálculo":(r.meta==null?"Sem Meta":(r.cons>r.lmax?"Acima":(r.cons<r.lmin?"Abaixo":"Dentro")));
+      const al=[];
+      if(!r.tipo||r.meta==null)al.push("Sem produto / meta");
+      if(!(r.qtd>0))al.push("Sem nº de animais");
+      if(!(r.peso>0))al.push("Sem peso");
+      if(!(r.kg>0))al.push("Fornecimento zerado");
+      if(r.lancDia>1)al.push("Lançamento repetido no dia");
+      if(r.stInt==="Pasto vazio / quebra")al.push(`Intervalo acima de ${CFG.diasMax} dias`);
+      if(r.cons!=null&&r.lmax!=null&&r.dias>=3&&r.cons>CFG.fatorAlto*r.lmax)al.push("Consumo muito alto");
+      if(med!=null&&r.sacos>5*med&&r.sacos>20)al.push("Sacos fora do padrão do pasto");
+      if(r.varCab!=null&&Math.abs(r.varCab)>CFG.mudanca/100)al.push(`Mudança de cabeças acima de ${CFG.mudanca}%`);
+      r.alertas=al;
+    }
+  }
+  return R;
+}
+
+/* ======================= AGREGAÇÕES ======================= */
+const sum=(a,f)=>a.reduce((s,r)=>{const v=f(r);return v==null||isNaN(v)?s:s+v;},0);
+const div=(a,b)=>b?a/b:null;
+function groupBy(a,f){const m=new Map();for(const r of a){const k=f(r);if(!m.has(k))m.set(k,[]);m.get(k).push(r);}return m;}
+function agg(rows){
+  const v=rows.filter(r=>r.cabDia);const vm=v.filter(r=>r.meta!=null);
+  const cd=sum(v,r=>r.cabDia),cdm=sum(vm,r=>r.cabDia);
+  const cons=div(sum(v,r=>r.kgV),cd),meta=div(sum(vm,r=>r.meta*r.cabDia),cdm),
+    lmin=div(sum(vm,r=>r.lmin*r.cabDia),cdm),lmax=div(sum(vm,r=>r.lmax*r.cabDia),cdm);
+  const pv=div(sum(v.filter(r=>r.peso>0),r=>r.cons/r.peso*r.cabDia),sum(v.filter(r=>r.peso>0),r=>r.cabDia));
+  return {cons,meta,lmin,lmax,pv,cd,status:statusOf(cons,lmin,lmax)};
+}
+function statusOf(c,mn,mx){if(c==null)return null;if(mn==null||mx==null)return "Sem Meta";return c>mx?"Acima":(c<mn?"Abaixo":"Dentro");}
+const stCls=s=>s==="Acima"?"high":s==="Abaixo"?"low":s==="Dentro"?"ok":"none";
+function pastosAgg(rows){return [...groupBy(rows,r=>r.chave)].map(([k,g])=>Object.assign({chave:k,retiro:g[0].retiro,pasto:g[0].pasto,rows:g},agg(g)));}
+function animaisSup(rows){
+  const meses=groupBy(rows,r=>r.mesKey);if(!meses.size)return null;let tot=0;
+  for(const [,gm] of meses){let s=0;for(const [,g] of groupBy(gm,r=>r.chave)){const dv=sum(g,r=>r.diasV);
+    if(dv>0)s+=sum(g,r=>r.cabDia)/dv;else{const mx=Math.max(...g.map(r=>r.data.getTime()));s+=Math.max(0,...g.filter(r=>r.data.getTime()===mx).map(r=>r.qtd||0));}}
+    tot+=s;}
+  return tot/meses.size;
+}
+function saidaFabrica(rows){let s=0;for(const [,g] of groupBy(rows,r=>r.retiro+"|"+r.mesKey))s+=Math.max(0,...g.map(r=>r.saida||0));return s;}
+function txLotacao(rows){
+  let peso=0,area=0;
+  for(const [,g] of groupBy(rows,r=>r.retiro)){const ult=Math.max(...g.map(r=>r.mesKey));const gu=g.filter(r=>r.mesKey===ult);
+    const mapa=Math.max(0,...gu.map(r=>r.mapa||0));const pm=gu.filter(r=>r.peso>0);const pmed=pm.length?sum(pm,r=>r.peso)/pm.length:0;
+    peso+=mapa*pmed;area+=Math.max(0,...g.map(r=>r.area||r.areaHdr||0));}
+  return area?peso/CFG.pesoUA/area:null;
+}
+function catPad(c){
+  if(!c)return null;let s=c.replace(/GARROTES?|NOVILHOS?(?! )|MESES|MES/g," ").replace(/\s+/g," ").trim();
+  if(/^VACAS? E NOVILHAS?$/.test(s))return "VACAS E NOVILHAS";if(/^VACAS?$/.test(s))return "VACAS";
+  const m=s.match(/(\d{1,2})\s*(?:A|-|À|ATE|ATÉ)?\s*(\d{1,2})/);
+  if(m){let a=+m[1],b=+m[2];if(a===33&&b===24)a=13;if(a>b)[a,b]=[b,a];return `${String(a).padStart(2,"0")} A ${b} MESES`;}
+  return s||c;
+}
+function pesoMedio(rows){let pq=0,q=0;for(const [,g] of groupBy(rows,r=>r.arquivo+"|"+r.aba+"|"+r.id)){const r=g[0];if(r.peso>0&&r.qtd>0){pq+=r.peso*r.qtd;q+=r.qtd;}}return q?pq/q:null;}
+function previsao(rows){
+  if(!rows.length)return {mes:null,linhas:[]};
+  const ult=Math.max(...rows.map(r=>r.mesKey));const y=Math.floor(ult/100),m=ult%100;
+  const diasProx=new Date(Date.UTC(y,m+1,0)).getUTCDate();const nm=m===12?`${MESES[0]}/${y+1}`:`${MESES[m]}/${y}`;
+  const res=new Map();
+  for(const [,g] of groupBy(rows.filter(r=>r.mesKey===ult),r=>r.chave)){
+    const mx=Math.max(...g.map(r=>r.data.getTime()));const l=g.filter(r=>r.data.getTime()===mx);
+    const q=Math.max(0,...l.map(r=>r.qtd||0));const me=Math.max(...l.map(r=>r.meta??-1));if(me<0)continue;
+    const r0=l[0];const sacos=q*me*diasProx/r0.pesoSaco;
+    const k=r0.retiro+"|"+(r0.tipo||"?");res.set(k,(res.get(k)||0)+sacos);
+  }
+  return {mes:nm,linhas:[...res].map(([k,v])=>{const [ret,tipo]=k.split("|");return {ret,tipo,sacos:v};})};
+}
+
+/* ======================= ESTADO / FILTROS ======================= */
+let RAW=[],ALL=[],SRC="Exemplo fictício",ERROS=[];
+const F={ano:"",mes:"",ret:"",prod:"",per:"",cat:""};
+function filtered(opts={}){return ALL.filter(r=>(!F.ano||r.ano==F.ano)&&(opts.ignoreMes||!F.mes||r.mes===F.mes)&&(!F.ret||r.retiro===F.ret)&&(!F.prod||r.tipo===F.prod)&&(!F.per||r.periodo===F.per)&&(!F.cat||r.catP===F.cat));}
+function fillSelect(id,vals,cur,labelAll){const s=document.getElementById(id);s.innerHTML=`<option value="">${labelAll}</option>`+vals.map(v=>`<option value="${esc(v)}"${String(v)===String(cur)?" selected":""}>${esc(v)}</option>`).join("");}
+function refreshFilters(){
+  const anos=[...new Set(ALL.map(r=>r.ano))].sort();
+  const mesesL=[...new Map(ALL.filter(r=>!F.ano||r.ano==F.ano).map(r=>[r.mesKey,r.mes])).entries()].sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+  if(F.mes&&!mesesL.includes(F.mes))F.mes="";
+  fillSelect("fAno",anos,F.ano,"Todos");fillSelect("fMes",mesesL,F.mes,"Todos");
+  fillSelect("fRet",[...new Set(ALL.map(r=>r.retiro))].sort(),F.ret,"Todos");
+  fillSelect("fProd",[...new Set(ALL.map(r=>r.tipo).filter(Boolean))].sort(),F.prod,"Todos");
+  fillSelect("fPer",["Águas","Seca"],F.per,"Todos");
+  fillSelect("fCat",[...new Set(ALL.map(r=>r.catP).filter(Boolean))].sort(),F.cat,"Todas");
+}
+for(const [id,k] of [["fAno","ano"],["fMes","mes"],["fRet","ret"],["fProd","prod"],["fPer","per"],["fCat","cat"]])
+  document.getElementById(id).addEventListener("change",e=>{F[k]=e.target.value;if(k==="ano")F.mes="";refreshFilters();render();});
+document.getElementById("clear").onclick=()=>{for(const k in F)F[k]="";refreshFilters();render();};
+
+/* ======================= FORMATAÇÃO ======================= */
+const nf=(d)=>new Intl.NumberFormat("pt-BR",{minimumFractionDigits:d,maximumFractionDigits:d});
+const f3=v=>v==null?"–":nf(3).format(v),f2=v=>v==null?"–":nf(2).format(v),f1=v=>v==null?"–":nf(1).format(v),f0=v=>v==null?"–":nf(0).format(v);
+const pc=(v,d=0)=>v==null?"–":nf(d).format(v*100)+"%";
+const brl=v=>v==null?"–":new Intl.NumberFormat("pt-BR",{style:"currency",currency:"BRL"}).format(v);
+const dt=d=>d?`${String(d.getUTCDate()).padStart(2,"0")}/${String(d.getUTCMonth()+1).padStart(2,"0")}/${d.getUTCFullYear()}`:"–";
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+const pill=s=>`<span class="pill p-${stCls(s)}">${esc(s==="Dentro"?"Dentro da meta":s==="Acima"?"Acima do limite":s==="Abaixo"?"Abaixo do limite":(s||"–"))}</span>`;
+function kpi(t,v,s,cls=""){return `<div class="card kpi ${cls}"><h3>${esc(t)}</h3><div class="v">${v}</div><div class="s">${s||""}</div></div>`;}
+function table(cols,rows,opts={}){
+  if(!rows.length)return `<div class="empty">Nada para mostrar com estes filtros.</div>`;
+  return `<table><thead><tr>${cols.map(c=>`<th class="${c.n?"n":""}">${esc(c.t)}</th>`).join("")}</tr></thead><tbody>${rows.map((r,i)=>`<tr${opts.click?` class="click" data-k="${esc(opts.key(r))}" tabindex="0"`:""}>${cols.map(c=>`<td class="${c.n?"n":""}">${c.f(r,i)}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+}
+
+/* ======================= GRÁFICOS (SVG) ======================= */
+function lineChart(pts){
+  if(pts.length<1)return `<div class="empty">Sem meses para mostrar.</div>`;
+  const W=900,H=280,L=50,Rm=16,T=16,B=40;const xs=i=>L+(pts.length===1?(W-L-Rm)/2:i*(W-L-Rm)/(pts.length-1));
+  const vals=pts.flatMap(p=>[p.cons,p.lmax,p.lmin,p.meta]).filter(v=>v!=null);const ymax=Math.max(...vals,0.01)*1.12;
+  const ys=v=>T+(H-T-B)*(1-v/ymax);
+  const step=niceStep(ymax/4);let grid="";for(let v=0;v<=ymax;v+=step)grid+=`<line class="axis" x1="${L}" x2="${W-Rm}" y1="${ys(v)}" y2="${ys(v)}"/><text x="${L-6}" y="${ys(v)+4}" text-anchor="end">${nf(step<0.1?2:1).format(v)}</text>`;
+  const band=pts.filter(p=>p.lmin!=null);
+  let bandP="";if(band.length){const idx=pts.map((p,i)=>[p,i]).filter(([p])=>p.lmin!=null);bandP=`<path fill="var(--band)" d="M${idx.map(([p,i])=>`${xs(i)},${ys(p.lmax)}`).join("L")}L${idx.slice().reverse().map(([p,i])=>`${xs(i)},${ys(p.lmin)}`).join("L")}Z"/>`;}
+  const path=(k,st)=>{const s=pts.map((p,i)=>p[k]==null?null:`${xs(i)},${ys(p[k])}`).filter(Boolean);return s.length?`<path d="M${s.join("L")}" fill="none" ${st}/>`:"";};
+  const dots=pts.map((p,i)=>p.cons==null?"":`<circle cx="${xs(i)}" cy="${ys(p.cons)}" r="${i===pts.length-1?5:3.5}" fill="var(--${stCls(statusOf(p.cons,p.lmin,p.lmax))==="none"?"accent":stCls(statusOf(p.cons,p.lmin,p.lmax))})"><title>${esc(p.label)}: ${f3(p.cons)} kg (meta ${f3(p.meta)})</title></circle>`).join("");
+  const lbl=pts.map((p,i)=>`<text x="${xs(i)}" y="${H-B+18}" text-anchor="middle">${esc(p.short)}</text>`).join("");
+  const last=pts[pts.length-1];
+  const endLbl=last.cons!=null?`<text x="${Math.min(xs(pts.length-1),W-Rm-4)}" y="${ys(last.cons)-12}" text-anchor="end" style="fill:var(--ink);font-weight:600;paint-order:stroke;stroke:var(--surface);stroke-width:4px">${f3(last.cons)}</text>`:"";
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Consumo real e meta por mês">${grid}${bandP}${path("meta",'stroke="var(--ok)" stroke-dasharray="5 4" stroke-width="1.5"')}${path("cons",'stroke="var(--accent)" stroke-width="2.5"')}${dots}${lbl}${endLbl}</svg>
+  <div class="legend"><span><i style="background:var(--accent)"></i>Consumo real (kg/cab/dia)</span><span><i style="background:var(--ok)"></i>Meta</span><span><i style="background:var(--band)"></i>Faixa de tolerância</span></div>`;
+}
+function barChart(items,fmt){
+  const it=items.filter(i=>i.v!=null);if(!it.length)return `<div class="empty">Sem dados.</div>`;
+  const W=520,H=220,L=10,T=22,B=28;const mx=Math.max(...it.map(i=>i.v))*1.15||1;const bw=(W-L*2)/items.length;
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img">${items.map((i,k)=>{if(i.v==null)return "";const h=(H-T-B)*i.v/mx;const x=L+k*bw+bw*0.15,w=bw*0.7,y=H-B-h;const last=k===items.length-1;
+    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="3" fill="var(--accent)" opacity="${last?1:0.55}"><title>${esc(i.full)}: ${fmt(i.v)}</title></rect><text x="${x+w/2}" y="${y-5}" text-anchor="middle" style="fill:var(--ink)">${fmt(i.v)}</text><text x="${x+w/2}" y="${H-B+16}" text-anchor="middle">${esc(i.l)}</text>`;}).join("")}<line class="axis" x1="${L}" x2="${W-L}" y1="${H-B}" y2="${H-B}"/></svg>`;
+}
+function niceStep(x){const p=Math.pow(10,Math.floor(Math.log10(x)));const n=x/p;return (n<1.5?1:n<3?2:n<7?5:10)*p;}
+function bullets(items){
+  if(!items.length)return `<div class="empty">Sem dados.</div>`;
+  const mx=Math.max(...items.flatMap(i=>[i.cons||0,i.lmax||0]))*1.08||1;const x=v=>(v/mx*100).toFixed(2)+"%";
+  return items.map(i=>`<div class="bullet"><span title="${esc(i.nome)}">${esc(i.nome)}</span><div class="track">${i.lmin!=null?`<div class="band" style="left:${x(i.lmin)};width:calc(${x(i.lmax)} - ${x(i.lmin)})"></div>`:""}<div class="bar" style="width:${x(i.cons||0)};background:var(--${stCls(i.status)==="none"?"accent":stCls(i.status)})"></div>${i.meta!=null?`<div class="meta" style="left:${x(i.meta)}"></div>`:""}</div><span class="num" style="text-align:right">${f3(i.cons)}</span></div>`).join("")
+  +`<div class="legend" style="margin-top:6px"><span>kg/cab/dia</span></div>`;
+}
+function donut(counts){
+  const tot=counts.reduce((a,c)=>a+c.n,0);if(!tot)return `<div class="empty">Sem pastos avaliados.</div>`;
+  let a0=-Math.PI/2,seg="";const R=70,r=44,cx=90,cy=90;
+  for(const c of counts){if(!c.n)continue;const a1=a0+c.n/tot*2*Math.PI;const lg=a1-a0>Math.PI?1:0;
+    const p=(a,rr)=>`${cx+rr*Math.cos(a)},${cy+rr*Math.sin(a)}`;
+    seg+= c.n===tot?`<circle cx="${cx}" cy="${cy}" r="${(R+r)/2}" fill="none" stroke="var(--${c.cls})" stroke-width="${R-r}"/>`
+      :`<path d="M${p(a0,R)}A${R},${R} 0 ${lg} 1 ${p(a1,R)}L${p(a1,r)}A${r},${r} 0 ${lg} 0 ${p(a0,r)}Z" fill="var(--${c.cls})"><title>${c.t}: ${c.n}</title></path>`;a0=a1;}
+  return `<div class="row" style="gap:24px"><svg viewBox="0 0 180 180" width="160" role="img" aria-label="Distribuição dos pastos">${seg}<text x="90" y="88" text-anchor="middle" style="font:600 24px var(--display);fill:var(--ink)">${tot}</text><text x="90" y="106" text-anchor="middle">pastos</text></svg>
+  <div style="display:grid;gap:6px">${counts.map(c=>`<div><span class="pill p-${c.cls}">${c.t}</span> <b class="num">${c.n}</b> <span class="small">(${pc(c.n/tot)})</span></div>`).join("")}</div></div>`;
+}
+
+/* ======================= RENDER ======================= */
+function render(){
+  const rows=filtered();const a=agg(rows);const P=pastosAgg(rows);
+  const cnt=s=>P.filter(p=>p.status===s).length;const aval=P.filter(p=>p.status&&p.status!=="Sem Meta").length;
+  const alertas=rows.filter(r=>r.alertas.length).length;
+  document.getElementById("srcLabel").textContent="Consumo de suplemento a pasto · "+SRC;
+  // Visão geral
+  const varM=a.cons!=null&&a.meta?a.cons/a.meta-1:null;
+  document.getElementById("kpis").innerHTML=
+    kpi("Consumo real",f3(a.cons)+" <small class='small'>kg/cab/dia</small>",`Meta ${f3(a.meta)} · faixa ${f3(a.lmin)} a ${f3(a.lmax)}`,stCls(a.status)==="none"?"acc":stCls(a.status))+
+    kpi("Variação contra a meta",varM==null?"–":(varM>0?"+":"")+pc(varM,1),a.status?pill(a.status):"",stCls(a.status)==="none"?"acc":stCls(a.status))+
+    kpi("Pastos dentro da meta",pc(div(cnt("Dentro"),aval)),`${cnt("Dentro")} de ${aval} pastos avaliados`,"ok")+
+    kpi("Animais suplementados",f0(animaisSup(rows)),`Lotação ${f2(txLotacao(rows))} UA/ha · consumo ${pc(a.pv,3)} PV`,"acc");
+  const porRet=[...groupBy(rows,r=>r.retiro)].map(([k,g])=>Object.assign({nome:k},agg(g))).sort((x,y)=>(y.cons||0)-(x.cons||0));
+  document.getElementById("bullets").innerHTML=bullets(porRet);
+  document.getElementById("donut").innerHTML=donut([{t:"Dentro da meta",n:cnt("Dentro"),cls:"ok"},{t:"Acima do limite",n:cnt("Acima"),cls:"high"},{t:"Abaixo do limite",n:cnt("Abaixo"),cls:"low"},{t:"Sem meta",n:cnt("Sem Meta"),cls:"none"}]);
+  const tR=[...groupBy(rows,r=>r.retiro)].map(([k,g])=>{const x=agg(g);const pp=pastosAgg(g);return Object.assign({ret:k,an:animaisSup(g),pastos:pp.length,dentro:pp.filter(p=>p.status==="Dentro").length,aval:pp.filter(p=>p.status&&p.status!=="Sem Meta").length,sacos:sum(g,r=>r.sacos),lot:txLotacao(g)},x);}).sort((a,b)=>a.ret.localeCompare(b.ret));
+  document.getElementById("tRetiro").innerHTML=table([
+    {t:"Retiro",f:r=>`<b>${esc(r.ret)}</b>`},{t:"Animais",n:1,f:r=>f0(r.an)},{t:"Lotação UA/ha",n:1,f:r=>f2(r.lot)},{t:"Consumo",n:1,f:r=>f3(r.cons)},{t:"Meta",n:1,f:r=>f3(r.meta)},
+    {t:"% PV",n:1,f:r=>pc(r.pv,3)},{t:"Situação",f:r=>pill(r.status)},{t:"Pastos na meta",n:1,f:r=>`${r.dentro}/${r.aval}`},{t:"Sacos",n:1,f:r=>f0(r.sacos)}],tR);
+
+  // Relatório: retiro com quebra por produto
+  const linhaRel=(nome,g,grp)=>{const x=agg(g);const pp=pastosAgg(g);return {nome,grp,an:animaisSup(g),peso:pesoMedio(g),lot:grp?txLotacao(g):null,cons:x.cons,meta:x.meta,pv:x.pv,status:x.status,
+    dentro:pp.filter(p=>p.status==="Dentro").length,aval:pp.filter(p=>p.status&&p.status!=="Sem Meta").length,sacos:sum(g,r=>r.sacos)};};
+  const rel=[];for(const [ret,g] of [...groupBy(rows,r=>r.retiro)].sort((a,b)=>a[0].localeCompare(b[0]))){rel.push(linhaRel(ret,g,true));
+    for(const [t,gt] of [...groupBy(g,r=>r.tipo||"(sem produto)")].sort((a,b)=>a[0].localeCompare(b[0])))rel.push(linhaRel(t,gt,false));}
+  if(rows.length)rel.push(Object.assign(linhaRel("TOTAL",rows,true),{tot:1}));
+  const relCols=[{t:"Retiro / produto",f:r=>r.grp?`<b>${esc(r.nome)}</b>`:esc(r.nome)},{t:"Animais",n:1,f:r=>f0(r.an)},{t:"Peso médio (kg)",n:1,f:r=>f0(r.peso)},{t:"Lotação UA/ha",n:1,f:r=>r.grp?f2(r.lot):""},
+    {t:"Consumo",n:1,f:r=>f3(r.cons)},{t:"Meta",n:1,f:r=>f3(r.meta)},{t:"% PV",n:1,f:r=>pc(r.pv,3)},{t:"Situação",f:r=>pill(r.status)},{t:"Pastos na meta",n:1,f:r=>`${r.dentro}/${r.aval}`},{t:"Sacos",n:1,f:r=>f0(r.sacos)}];
+  let th=table(relCols,rel);
+  document.getElementById("tRel").innerHTML=th;
+  document.querySelectorAll("#tRel tbody tr").forEach((tr,i)=>{if(rel[i].grp)tr.classList.add("grp");else tr.firstElementChild.classList.add("ind");});
+  document.getElementById("tCat").innerHTML=table(relCols.filter(c=>c.t!=="Lotação UA/ha").map(c=>c.t==="Retiro / produto"?{t:"Categoria",f:r=>esc(r.nome)}:c),
+    [...groupBy(rows,r=>r.catP||"(sem categoria)")].sort((a,b)=>a[0].localeCompare(b[0])).map(([c,g])=>linhaRel(c,g,false)));
+
+  // Capatazes
+  const capRows=filtered({ignoreMes:true});
+  const refKey=F.mes?(capRows.find(r=>r.mes===F.mes)||{}).mesKey:Math.max(-Infinity,...capRows.map(r=>r.mesKey));
+  const refMes=(capRows.find(r=>r.mesKey===refKey)||{}).mes;
+  document.getElementById("capRef").textContent=refMes?`Referência: ${refMes}`:"";
+  const cards=[];
+  for(const [ret,g] of [...groupBy(capRows.filter(r=>r.mesKey===refKey),r=>r.retiro)].sort((a,b)=>a[0].localeCompare(b[0]))){
+    const ultRet=Math.max(...capRows.filter(r=>r.retiro===ret).map(r=>r.data.getTime()));
+    const itens=[];
+    for(const p of pastosAgg(g)){
+      const ult=Math.max(...p.rows.map(r=>r.data.getTime()));const semTrato=Math.round((ultRet-ult)/DAY);
+      const q=Math.max(0,...p.rows.filter(r=>r.data.getTime()===ult).map(r=>r.qtd||0));const tipo=p.rows[p.rows.length-1].tipo||"";
+      if(p.status==="Acima")itens.push({o:0,cls:"high",t:`Pasto ${p.pasto}: consumo ${f3(p.cons)} kg, acima da meta ${f3(p.meta)}`,a:"Revisar a quantidade fornecida e conferir desperdício no cocho.",q,tipo});
+      else if(p.status==="Abaixo")itens.push({o:1,cls:"low",t:`Pasto ${p.pasto}: consumo ${f3(p.cons)} kg, abaixo da meta ${f3(p.meta)}`,a:"Conferir se o cocho ficou vazio, molhado ou sem acesso.",q,tipo});
+      if(semTrato>=10)itens.push({o:2,cls:"stale",t:`Pasto ${p.pasto}: ${semTrato} dias sem trato lançado`,a:"Confirmar se o lote saiu do pasto ou se faltou lançar.",q,tipo});
+    }
+    if(!itens.length)continue;itens.sort((a,b)=>a.o-b.o);
+    const pior=itens[0].cls;
+    cards.push(`<div class="card cap ${pior}"><div class="big">${esc(ret)}</div><div class="small">${itens.filter(i=>i.o<2).length} fora da meta · ${itens.filter(i=>i.o===2).length} sem trato recente</div>
+      <ul>${itens.map(i=>`<li><span class="pill p-${i.cls==="stale"?"none":i.cls}">${i.cls==="high"?"Acima":i.cls==="low"?"Abaixo":"Sem trato"}</span> <b>${esc(i.t)}</b><br><span class="small">${f0(i.q)} cab · ${esc(i.tipo)} · ${esc(i.a)}</span></li>`).join("")}</ul></div>`);
+  }
+  document.getElementById("capCards").innerHTML=cards.join("")||`<div class="card"><div class="empty">Nenhum pasto fora da meta ou sem trato recente neste mês.</div></div>`;
+
+  // Pastos: mapa de calor (ignora filtro de mês para mostrar a série)
+  const rowsH=filtered({ignoreMes:true});
+  const mesesH=[...new Map(rowsH.map(r=>[r.mesKey,r.mes])).entries()].sort((a,b)=>a[0]-b[0]);
+  const PH=pastosAgg(rowsH).sort((a,b)=>a.retiro.localeCompare(b.retiro)||a.pasto.localeCompare(b.pasto,"pt-BR",{numeric:true}));
+  if(!PH.length)document.getElementById("heat").innerHTML=`<div class="empty">Nada para mostrar com estes filtros.</div>`;
+  else{let h=`<table><thead><tr><th>Retiro</th><th>Pasto</th>${mesesH.map(m=>`<th class="n">${esc(m[1].replace(/(\w{3})\w*\//,"$1/"))}</th>`).join("")}<th class="n">Período</th></tr></thead><tbody>`;
+    for(const p of PH){const bm=groupBy(p.rows,r=>r.mesKey);
+      h+=`<tr class="click" data-k="${esc(p.chave)}" tabindex="0"><td class="r">${esc(p.retiro)}</td><td>${esc(p.pasto)}</td>${mesesH.map(([k])=>{const g=bm.get(k);if(!g)return `<td></td>`;const x=agg(g);return x.cons==null?`<td class="c none">·</td>`:`<td class="c ${stCls(x.status)}" title="Meta ${f3(x.meta)}">${f3(x.cons)}</td>`;}).join("")}<td class="c ${stCls(p.status)}">${f3(p.cons)}</td></tr>`;}
+    document.getElementById("heat").innerHTML=h+"</tbody></table>";}
+  const rk=P.filter(p=>p.cons!=null&&p.meta!=null).map(p=>Object.assign(p,{desv:p.cons-p.meta,fora:[...groupBy(p.rows,r=>r.mesKey)].filter(([,g])=>{const s=agg(g).status;return s==="Acima"||s==="Abaixo";}).length}));
+  const rkCols=[{t:"Retiro",f:r=>esc(r.retiro)},{t:"Pasto",f:r=>`<b>${esc(r.pasto)}</b>`},{t:"Consumo",n:1,f:r=>f3(r.cons)},{t:"Meta",n:1,f:r=>f3(r.meta)},{t:"Desvio",n:1,f:r=>(r.desv>0?"+":"")+f3(r.desv)},{t:"Meses fora",n:1,f:r=>r.fora}];
+  document.getElementById("rkHigh").innerHTML=table(rkCols,rk.filter(p=>p.status==="Acima").sort((a,b)=>b.desv-a.desv).slice(0,10),{click:1,key:r=>r.chave});
+  document.getElementById("rkLow").innerHTML=table(rkCols,rk.filter(p=>p.status==="Abaixo").sort((a,b)=>a.desv-b.desv).slice(0,10),{click:1,key:r=>r.chave});
+
+  // Tendência
+  const serie=[...groupBy(rowsH,r=>r.mesKey)].sort((a,b)=>a[0]-b[0]).map(([k,g])=>{const x=agg(g);return Object.assign({label:g[0].mes,short:g[0].mes.slice(0,3)+"/"+String(g[0].ano).slice(2)},x);});
+  document.getElementById("line").innerHTML=lineChart(serie);
+  const porMes=[...groupBy(rowsH,r=>r.mesKey)].sort((a,b)=>a[0]-b[0]).map(([k,g])=>({lbl:g[0].mes.slice(0,3)+"/"+String(g[0].ano).slice(2),full:g[0].mes,an:animaisSup(g),lot:txLotacao(g)}));
+  document.getElementById("barAnim").innerHTML=barChart(porMes.map(m=>({l:m.lbl,full:m.full,v:m.an})),f0);
+  document.getElementById("barLot").innerHTML=barChart(porMes.map(m=>({l:m.lbl,full:m.full,v:m.lot})),f2);
+  const anosY=[...new Set(rowsH.map(r=>r.ano))].sort();const byMA=groupBy(rowsH,r=>r.mesNum+"|"+r.ano);
+  const yoyRows=[...new Set(rowsH.map(r=>r.mesNum))].sort((a,b)=>a-b).map(m=>{const o={mes:MESES[m-1]};for(const a of anosY){const g=byMA.get(m+"|"+a);o[a]=g?agg(g):null;}return o;});
+  document.getElementById("yoy").innerHTML=table([{t:"Mês",f:r=>`<b>${r.mes}</b>`},...anosY.flatMap(a=>[{t:`${a} consumo`,n:1,f:r=>r[a]?f3(r[a].cons):"–"},{t:`${a} meta`,n:1,f:r=>r[a]?f3(r[a].meta):"–"},{t:`${a}`,f:r=>r[a]?pill(r[a].status):""}])],yoyRows);
+  const est=["Águas","Seca"].map(s=>Object.assign({nome:s},agg(rows.filter(r=>r.periodo===s)))).filter(x=>x.cons!=null);
+  document.getElementById("season").innerHTML=bullets(est)+`<p class="note">Meses de seca: ${CFG.mesesSeca.map(m=>MESES[m-1].slice(0,3)).join(", ")||"nenhum"} (altere em Ajustes).</p>`;
+  const cvs=P.map(p=>{const c=p.rows.filter(r=>r.cons!=null).map(r=>r.cons);if(c.length<3)return null;const m=c.reduce((a,b)=>a+b,0)/c.length;const sd=Math.sqrt(c.reduce((a,b)=>a+(b-m)**2,0)/c.length);
+    const iv=p.rows.filter(r=>r.diasV).map(r=>r.diasV);return {retiro:p.retiro,pasto:p.pasto,chave:p.chave,cv:m?sd/m:null,int:iv.length?iv.reduce((a,b)=>a+b,0)/iv.length:null,n:p.rows.length,cons:p.cons};}).filter(Boolean).sort((a,b)=>b.cv-a.cv).slice(0,15);
+  document.getElementById("cv").innerHTML=table([{t:"Retiro",f:r=>esc(r.retiro)},{t:"Pasto",f:r=>`<b>${esc(r.pasto)}</b>`},{t:"CV",n:1,f:r=>pc(r.cv)},{t:"Intervalo médio (dias)",n:1,f:r=>f1(r.int)},{t:"Tratos",n:1,f:r=>r.n},{t:"Consumo",n:1,f:r=>f3(r.cons)}],cvs,{click:1,key:r=>r.chave});
+
+  // Logística
+  const sf=saidaFabrica(rows),sac=sum(rows,r=>r.sacos);const iv=rows.filter(r=>r.diasV);
+  document.getElementById("kLog").innerHTML=kpi("Saída de fábrica",f0(sf),"sacos","acc")+kpi("Sacos fornecidos",f0(sac),f0(sum(rows,r=>r.kg))+" kg","acc")+
+    kpi("Fornecido / saída",pc(div(sac,sf)),"ideal entre 90% e 110%",div(sac,sf)==null?"":(div(sac,sf)>1.1?"high":div(sac,sf)<0.9?"low":"ok"))+
+    kpi("Intervalo entre tratos",f1(iv.length?sum(iv,r=>r.diasV)/iv.length:null)+" dias","média dos intervalos válidos","acc");
+  const cc=[...groupBy(rows,r=>r.retiro+"|"+r.mesKey)].map(([k,g])=>{const s=Math.max(0,...g.map(r=>r.saida||0));const f=sum(g,r=>r.sacos);return {ret:g[0].retiro,mes:g[0].mes,mk:g[0].mesKey,s,f,r:div(f,s)};}).sort((a,b)=>a.ret.localeCompare(b.ret)||a.mk-b.mk);
+  document.getElementById("concil").innerHTML=table([{t:"Retiro",f:r=>esc(r.ret)},{t:"Mês",f:r=>esc(r.mes)},{t:"Saída fábrica",n:1,f:r=>f0(r.s)},{t:"Fornecido",n:1,f:r=>f0(r.f)},
+    {t:"Fornecido/Saída",n:1,f:r=>r.r==null?"–":`<span class="pill p-${r.r>1.1?"high":r.r<0.9?"low":"ok"}">${pc(r.r)}</span>`},{t:"Estoque teórico",n:1,f:r=>f0(r.s-r.f)}],cc);
+  const pv=previsao(rows);document.getElementById("prevNote").textContent=pv.mes?`Para ${pv.mes}: animais e meta da linha mais recente de cada pasto no último mês filtrado.`:"";
+  document.getElementById("prev").innerHTML=table([{t:"Retiro",f:r=>esc(r.ret)},{t:"Produto",f:r=>esc(r.tipo)},{t:"Sacos",n:1,f:r=>`<b>${f0(r.sacos)}</b>`}],pv.linhas.sort((a,b)=>a.ret.localeCompare(b.ret)||a.tipo.localeCompare(b.tipo)));
+  const exc=rows.filter(r=>r.cons!=null&&r.lmax!=null&&r.cons>r.lmax);const kgExc=sum(exc,r=>(r.cons-r.lmax)*r.cabDia);
+  const comPreco=rows.some(r=>r.preco!=null);
+  document.getElementById("cost").innerHTML=kpi("Custo total",comPreco?brl(sum(rows,r=>r.preco!=null?r.kg*r.preco:null)):"–",comPreco?"":"sem preço cadastrado","acc")+
+    kpi("Custo por cabeça/dia",comPreco?brl(div(sum(rows.filter(r=>r.cabDia&&r.preco!=null),r=>r.kgV*r.preco),sum(rows.filter(r=>r.cabDia&&r.preco!=null),r=>r.cabDia))):"–","","acc")+
+    kpi("kg acima do limite",f0(kgExc),"consumo excedente","high")+kpi("Custo do excedente",comPreco?brl(sum(exc,r=>r.preco!=null?(r.cons-r.lmax)*r.cabDia*r.preco:null)):"–","","high");
+
+  // Auditoria
+  const tipos=new Map();for(const r of rows)for(const al of r.alertas){const k=al.replace(/\d+/g,"N");tipos.set(al,(tipos.get(al)||0)+1);}
+  const fa=document.getElementById("fAlert");const curA=fa.value;
+  fa.innerHTML=`<option value="">Todos (${alertas})</option>`+[...tipos].sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<option value="${esc(k)}"${k===curA?" selected":""}>${esc(k)} (${n})</option>`).join("");
+  document.getElementById("kAud").innerHTML=kpi("Lançamentos",f0(rows.length),`${new Set(rows.map(r=>r.arquivo)).size} arquivo(s)`,"acc")+kpi("Com alerta",f0(alertas),pc(div(alertas,rows.length),1)+" dos lançamentos",alertas?"low":"ok")+
+    kpi("Em aberto",f0(rows.filter(r=>r.stInt==="Em aberto").length),"último trato de cada pasto, aguardando a próxima planilha","acc")+kpi("Pasto vazio / quebra",f0(rows.filter(r=>r.stInt==="Pasto vazio / quebra").length),`intervalo acima de ${CFG.diasMax} dias`,"acc");
+  const audRows=rows.filter(r=>r.alertas.length&&(!fa.value||r.alertas.includes(fa.value))).sort((a,b)=>b.data-a.data).slice(0,500);
+  document.getElementById("aud").innerHTML=table([{t:"Arquivo",f:r=>esc(r.arquivo)},{t:"Retiro",f:r=>esc(r.retiro)},{t:"Pasto",f:r=>`<b>${esc(r.pasto)}</b>`},{t:"Data",f:r=>dt(r.data)},{t:"Sacos",n:1,f:r=>f0(r.sacos)},{t:"Cabeças",n:1,f:r=>f0(r.qtd)},
+    {t:"Dias",n:1,f:r=>r.dias??"–"},{t:"Consumo",n:1,f:r=>f3(r.cons)},{t:"Alertas",f:r=>r.alertas.map(esc).join("<br>")}],audRows,{click:1,key:r=>r.chave})
+    +(alertas>500?`<p class="small">Mostrando os 500 mais recentes. Use os filtros para ver os demais.</p>`:"");
+  bindRowClicks();
+}
+function bindRowClicks(){document.querySelectorAll("tr.click").forEach(tr=>{const go=()=>showPasto(tr.dataset.k);tr.onclick=go;tr.onkeydown=e=>{if(e.key==="Enter")go();};});}
+function showPasto(k){
+  const g=ALL.filter(r=>r.chave===k&&(!F.ano||r.ano==F.ano)).sort((a,b)=>a.data-b.data);if(!g.length)return;
+  const box=document.getElementById("pastoDet");box.hidden=false;
+  const x=agg(g);
+  box.innerHTML=`<div class="row" style="justify-content:space-between"><h2>${esc(g[0].retiro)} · pasto ${esc(g[0].pasto)}</h2>${pill(x.status)}</div>
+  <p class="note">Consumo ${f3(x.cons)} kg/cab/dia contra meta ${f3(x.meta)}. ${g.length} tratos.</p>
+  <div class="scroll" style="max-height:420px">${table([{t:"Data",f:r=>dt(r.data)},{t:"Mês",f:r=>esc(r.mes)},{t:"Produto",f:r=>esc(r.tipo)},{t:"Cabeças",n:1,f:r=>f0(r.qtd)},{t:"Peso",n:1,f:r=>f0(r.peso)},{t:"Sacos",n:1,f:r=>f1(r.sacos)},
+    {t:"Próximo trato",f:r=>dt(r.prox)},{t:"Dias",n:1,f:r=>r.dias??"–"},{t:"Consumo",n:1,f:r=>f3(r.cons)},{t:"Meta",n:1,f:r=>f3(r.meta)},{t:"Situação",f:r=>r.cons==null?`<span class="small">${esc(r.stInt)}</span>`:pill(r.status)}],g)}</div>`;
+  if(location.hash!=="#pastos")location.hash="pastos";
+  setTimeout(()=>box.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"}),50);
+}
+
+/* ======================= NAVEGAÇÃO ======================= */
+const VIEWS=["visao","relatorio","pastos","capatazes","tendencia","logistica","auditoria","ajustes"];
+function route(){const v=VIEWS.includes(location.hash.slice(1))?location.hash.slice(1):"visao";
+  VIEWS.forEach(n=>document.getElementById("v-"+n).classList.toggle("on",n===v));
+  document.querySelectorAll("nav.tabs a").forEach(a=>{if(a.getAttribute("href")==="#"+v)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current");});
+  document.querySelector(".filters").style.display=v==="ajustes"?"none":"";}
+addEventListener("hashchange",route);
+document.getElementById("fAlert").onchange=render;
+
+/* ======================= CARGA DE ARQUIVOS ======================= */
+function toast(t){const e=document.getElementById("toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display="none",3500);}
+function setData(raw,src,erros=[]){RAW=raw;SRC=src;ERROS=erros;ALL=compute(RAW);for(const k in F)F[k]="";refreshFilters();render();
+  const m=document.getElementById("msg");
+  if(src==="Exemplo fictício"){m.className="notice";m.innerHTML=`Mostrando dados fictícios. Clique em <b>Abrir planilhas</b> e selecione as "Folha Suplementação" (pode selecionar várias de uma vez, de meses e anos diferentes). Os arquivos são lidos só neste navegador.`;}
+  else if(erros.length){m.className="notice warn";m.innerHTML=`<b>${f0(ALL.length)} lançamentos lidos.</b> Algumas abas foram ignoradas: ${erros.slice(0,4).map(esc).join(" ")}${erros.length>4?` (+${erros.length-4})`:""}`;}
+  else{m.className="notice";m.innerHTML=`<b>${f0(ALL.length)} lançamentos lidos</b> de ${src}. Os arquivos ficaram só neste navegador; ao fechar a página, abra-os de novo.`;}
+}
+async function readFiles(list){
+  const files=[...list].filter(f=>/\.(xlsx|xlsm|xls)$/i.test(f.name)&&!f.name.startsWith("~$"));
+  if(!files.length){toast("Selecione arquivos do Excel (.xlsx).");return;}
+  let all=[],erros=[];
+  for(const f of files){try{const wb=XLSX.read(await f.arrayBuffer(),{type:"array",cellDates:false});const r=parseWorkbook(wb,f.name);all.push(...r.rows);erros.push(...r.erros);}
+    catch(e){erros.push(`${f.name}: não foi possível ler (${e.message}).`);}}
+  if(!all.length){const m=document.getElementById("msg");m.className="notice warn";m.innerHTML=`Nenhum lançamento encontrado. Confira se as planilhas seguem o formato descrito em Ajustes. ${erros.slice(0,3).map(esc).join(" ")}`;return;}
+  setData(all,files.length===1?files[0].name:`${files.length} planilhas`,erros);
+}
+const inp=document.getElementById("files");
+document.getElementById("pick").onclick=()=>inp.click();
+inp.onchange=()=>{const lista=[...inp.files];readFiles(lista).finally(()=>{inp.value="";});};
+const drop=document.getElementById("drop");
+for(const el of [drop,document.body]){el.addEventListener("dragover",e=>{e.preventDefault();drop.classList.add("over");});el.addEventListener("dragleave",()=>drop.classList.remove("over"));
+  el.addEventListener("drop",e=>{e.preventDefault();drop.classList.remove("over");if(e.dataTransfer.files.length)readFiles(e.dataTransfer.files);});}
+
+/* ======================= EXPORTAR ======================= */
+function baseRows(){return filtered().map(r=>({Arquivo:r.arquivo,Retiro:r.retiro,Pasto:r.pasto,Ano:r.ano,"Mês":r.mes,"Período":r.periodo,"Data Fornecimento":dt(r.data),"Próximo Trato":dt(r.prox),
+  Categoria:r.cat,"Categoria Padronizada":r.catP,"Tipo de sal":r.tipo,"Quant. Animais":r.qtd,"Animais Próximo Trato":r.qProx,"Peso Estimado":r.peso,"Sacos":r.sacos,"kg Fornecidos":r.kg,"Dias":r.dias,"Status Intervalo":r.stInt,
+  "Cabeças-dia":r.cabDia,"Consumo kg/cab/dia":r.cons==null?null:+r.cons.toFixed(4),"Meta kg":r.meta==null?null:+r.meta.toFixed(4),"Limite Mín":r.lmin==null?null:+r.lmin.toFixed(4),"Limite Máx":r.lmax==null?null:+r.lmax.toFixed(4),
+  "Status Consumo":r.status,"Saída Fábrica (retiro/mês)":r.saida,Alertas:r.alertas.join("; ")}));}
+document.getElementById("export").onclick=async()=>{
+  const data=baseRows();
+  try{const ws=XLSX.utils.json_to_sheet(data);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Base calculada");XLSX.writeFile(wb,"mr-control_base_calculada.xlsx");toast("Planilha gerada.");}
+  catch(e){}
+  // alternativa quando o navegador bloqueia downloads: copiar como tabela
+  try{const cols=Object.keys(data[0]||{});const tsv=[cols.join("\t"),...data.map(r=>cols.map(c=>r[c]??"").join("\t"))].join("\n");await navigator.clipboard.writeText(tsv);toast("Base copiada. Cole no Excel com Ctrl+V (se o download não aparecer).");}catch(e){}
+};
+
+/* ======================= AJUSTES ======================= */
+function renderCfg(){
+  const t=document.getElementById("cfgProd");
+  t.innerHTML=`<thead><tr><th>Texto no "Tipo de sal"</th><th class="n">% do peso vivo</th><th class="n">Peso do saco (kg)</th><th class="n">Preço R$/kg</th><th></th></tr></thead><tbody>`+
+    CFG.produtos.map((p,i)=>`<tr><td><input id="pc${i}" value="${esc(p.chave)}" aria-label="Texto do produto ${i+1}"></td><td><input id="pp${i}" type="number" step="0.01" min="0" value="${p.pv}" aria-label="% PV produto ${i+1}"></td><td><input id="ps${i}" type="number" step="1" min="1" value="${p.saco}" aria-label="Peso do saco produto ${i+1}"></td><td><input id="pr${i}" type="number" step="0.01" min="0" value="${p.preco??""}" placeholder="–" aria-label="Preço produto ${i+1}"></td><td><button class="btn" data-del="${i}" aria-label="Remover produto ${i+1}">Remover</button></td></tr>`).join("")+"</tbody>";
+  t.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{readCfg();CFG.produtos.splice(+b.dataset.del,1);renderCfg();});
+  document.getElementById("cfgRules").innerHTML=[
+    ["cTol","Tolerância da meta (±%)",CFG.tolerancia],["cDias","Intervalo máximo entre tratos (dias)",CFG.diasMax],["cAlto","Alerta de consumo alto (× limite máx.)",CFG.fatorAlto],
+    ["cMud","Alerta de mudança de cabeças (%)",CFG.mudanca],["cUA","Peso da UA (kg)",CFG.pesoUA]].map(([id,l,v])=>`<div class="field" style="max-width:none"><label for="${id}">${l}</label><input id="${id}" type="number" step="any" value="${v}"></div>`).join("")+
+    `<div class="field" style="max-width:none"><label for="cSeca">Meses de seca (números, ex.: 5,6,7,8,9)</label><input id="cSeca" value="${CFG.mesesSeca.join(",")}"></div>`;
+}
+function readCfg(){
+  CFG.produtos=CFG.produtos.map((p,i)=>({chave:(document.getElementById("pc"+i)?.value||"").trim().toUpperCase(),pv:toNum(document.getElementById("pp"+i)?.value)??0,saco:toNum(document.getElementById("ps"+i)?.value)||30,preco:toNum(document.getElementById("pr"+i)?.value)}));
+  const g=id=>toNum(document.getElementById(id)?.value);
+  CFG.tolerancia=g("cTol")??25;CFG.diasMax=g("cDias")??30;CFG.fatorAlto=g("cAlto")??3;CFG.mudanca=g("cMud")??30;CFG.pesoUA=g("cUA")||450;
+  CFG.mesesSeca=(document.getElementById("cSeca")?.value||"").split(/[^\d]+/).map(Number).filter(n=>n>=1&&n<=12);
+}
+document.getElementById("addProd").onclick=()=>{readCfg();CFG.produtos.push({chave:"",pv:0.1,saco:30,preco:null});renderCfg();};
+document.getElementById("applyCfg").onclick=()=>{readCfg();CFG.produtos=CFG.produtos.filter(p=>p.chave);saveCfg();renderCfg();ALL=compute(RAW);refreshFilters();render();toast("Ajustes aplicados.");};
+document.getElementById("resetCfg").onclick=()=>{CFG=structuredClone(DEFAULT_CFG);saveCfg();renderCfg();ALL=compute(RAW);render();toast("Ajustes padrão restaurados.");};
+
+/* ======================= EXEMPLO FICTÍCIO ======================= */
+/* Gera planilhas no mesmo layout das "Folha Suplementação" e passa pelo mesmo leitor */
+function demoWorkbooks(){
+  let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  const retiros=[["SERRA AZUL",["0.2","0.2","SAL ADENSADO","0.3","0.2","MUB"]],["BOA VISTA",["0.1","0.2","0.2","0.1","SAL ADENSADO"]],["RIO CLARO",["0.3","0.2","0.2","MUB"]]];
+  const pastos={};for(const [r,tps] of retiros)pastos[r]=tps.map((t,i)=>({n:String(i+1),t,q:Math.round(60+rnd()*140),p:Math.round(280+rnd()*120),fat:0.75+rnd()*0.6}));
+  const books=[];
+  for(let m=2;m<=9;m++){
+    const wb=XLSX.utils.book_new();
+    for(const [r] of retiros){
+      const last=new Date(Date.UTC(2026,m,0)).getUTCDate();const datas=[];for(let d=2+Math.floor(rnd()*3);d<=last;d+=3+Math.floor(rnd()*3))datas.push(new Date(Date.UTC(2026,m-1,d)));
+      const pp=pastos[r];let sacosTot=0;
+      const linhas=pp.map(p=>{if(rnd()<0.12)p.q=Math.round(p.q*(0.6+rnd()*0.7));const pv=p.t.includes("0.")?+p.t*0.01:0.0005;const seca=m>=5&&m<=9;
+        const saco=p.t==="MUB"?50:30;
+        const row=[p.n,p.q,p.p+m*6,"GARROTE 13 A 24 MESES",p.t,800+pp.length*90];
+        let prev=null;for(const d of datas){if(rnd()<0.35){row.push(null);continue;}const dias=prev?Math.round((d-prev)/DAY):4;prev=d;
+          const kg=p.q*(p.p+m*6)*pv*p.fat*(seca?1.12:0.95)*dias*(0.8+rnd()*0.4);const s=Math.max(1,Math.round(kg/saco));sacosTot+=s;row.push(s);}
+        return row;});
+      const aoa=[["FOLHA DE SUPLEMENTAÇÃO"],[],["Retiro",r],["Mês",MESES[m-1]],["Saída fábrica (sacos)",Math.round(sacosTot*(0.9+rnd()*0.25)),null,null,null,0,pp.filter(p=>p.t==="SAL ADENSADO").reduce((a,p)=>a+p.q,0),pp.filter(p=>p.t==="0.1").reduce((a,p)=>a+p.q,0),pp.filter(p=>p.t==="0.2").reduce((a,p)=>a+p.q,0),pp.filter(p=>p.t==="0.3").reduce((a,p)=>a+p.q,0)],["Área",null],
+        ["Pasto","Quant. Animais","Peso Estimado","Categoria","Tipo de sal","Área Retiro",...datas],...linhas];
+      XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa,{cellDates:true}),r);
+    }
+    books.push([`Folha Suplementação${m-1}.xlsx`,wb]);
+  }
+  return books;
+}
+function loadDemo(){let all=[];for(const [n,wb] of demoWorkbooks()){const buf=XLSX.write(wb,{type:"array",bookType:"xlsx"});all.push(...parseWorkbook(XLSX.read(buf,{type:"array",cellDates:false}),n).rows);}setData(all,"Exemplo fictício");}
+document.getElementById("demo").onclick=loadDemo;
+
+/* ======================= INÍCIO ======================= */
+renderCfg();route();
+if(typeof XLSX==="undefined"){document.getElementById("msg").className="notice warn";document.getElementById("msg").textContent="Não foi possível carregar o leitor de Excel. Verifique a conexão com a internet e recarregue a página.";}
+else loadDemo();
+window.__app={compute,parseWorkbook,agg,animaisSup,pastosAgg,get ALL(){return ALL;}};
+</script>
+</body>
+</html>

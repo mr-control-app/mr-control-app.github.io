@@ -13,6 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="config.js"></script>
 <style>
 /* Layout: barra de filtros fixa + abas; cada aba é um painel de cartões em grade que vira coluna única no celular. */
 :root{
@@ -123,22 +124,51 @@ svg .axis{stroke:var(--line)}
 .cap .big{font:600 22px/1.2 var(--display)}.cap ul{margin:0;padding-left:18px;font-size:15px}
 .cap li{margin:4px 0}
 td.ind{padding-left:24px;color:var(--muted)}tr.grp td{background:var(--accent-soft);font-weight:600}
+[hidden]{display:none!important}
+#login{min-height:100vh;display:grid;place-items:center;padding:24px 16px;background:var(--brand)}
+.login-box{background:var(--surface);border-radius:14px;padding:28px 24px;width:100%;max-width:380px;display:grid;gap:14px;box-shadow:0 10px 40px rgba(0,0,0,.25)}
+.login-box img{width:72px;height:72px;border-radius:16px;justify-self:center}
+.login-box h1{text-align:center}.login-box p{margin:0;font-size:13px;color:var(--muted)}
+.login-box .field{max-width:none}.login-box .err{min-height:20px;font-size:13px;color:var(--high)}
+.user{display:flex;align-items:center;gap:8px;font-size:13px;flex-wrap:wrap}
+.user b{font-weight:600}
+#farmSel{padding:4px 8px;border-radius:6px;border:1px solid rgba(242,232,214,.45);background:var(--brand);color:var(--brand-ink);font:600 13px var(--body);max-width:260px}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:grid;place-items:center;padding:16px;z-index:20}
+.modal .card{width:100%;max-width:420px}
+.form{display:grid;gap:10px}.form .field{max-width:none}
+.chk{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px}
+.chk label{display:flex;gap:6px;align-items:center}
+.ro input{pointer-events:none;opacity:.75}
+details.mes{border-bottom:1px solid var(--line);padding:6px 0}details.mes summary{cursor:pointer;padding:6px 4px;display:flex;gap:10px;align-items:baseline}
 #toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:14px;display:none;max-width:90vw}
 @media (prefers-reduced-motion:no-preference){.btn{transition:border-color .15s}}
 </style>
 </head>
 <body>
+<section id="login" hidden>
+  <form class="login-box" id="loginForm" autocomplete="on">
+    <img src="icone-192.png" alt="Mr. Control">
+    <h1>Mr. Control</h1>
+    <p>Equipe da fazenda: deixe o usuário em branco e use a senha da fazenda.<br>Técnicos e administradores: usuário (nome.sobrenome) e senha própria.</p>
+    <div class="field"><label for="usr">Usuário (opcional)</label><input type="text" id="usr" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="nome.sobrenome"></div>
+    <div class="field"><label for="pwd">Senha</label><input type="password" id="pwd" autocomplete="current-password" required></div>
+    <button class="btn primary" type="submit" id="btnEntrar">Entrar</button>
+    <div class="err" id="loginErr" role="alert"></div>
+  </form>
+</section>
+<div id="appRoot">
 <header class="top">
   <div class="wrap">
     <div class="brand">
       <img src="icone-192.png" alt="" width="48" height="48">
-      <div style="display:flex;flex-direction:column;gap:2px"><h1>Mr. Control</h1><small id="srcLabel">Exemplo fictício</small></div>
+      <div style="display:flex;flex-direction:column;gap:2px"><h1>Mr. Control</h1><div class="row" style="gap:8px"><select id="farmSel" aria-label="Fazenda" hidden></select><small id="srcLabel">Exemplo fictício</small></div></div>
     </div>
     <div class="source">
       <input type="file" id="files" accept=".xlsx,.xlsm,.xls" multiple hidden>
-      <button class="btn primary" id="pick">Abrir planilhas</button>
+      <button class="btn primary" id="pick">Inserir planilhas</button>
       <button class="btn" id="demo">Exemplo fictício</button>
       <button class="btn" id="export">Baixar base calculada</button>
+      <div class="user" id="userBox" hidden><span id="userInfo"></span><button class="btn" id="btnSenha" hidden>Minha senha</button><button class="btn" id="btnSair">Sair</button></div>
     </div>
   </div>
 </header>
@@ -165,7 +195,10 @@ td.ind{padding-left:24px;color:var(--muted)}tr.grp td{background:var(--accent-so
     <a href="#tendencia">Histórico</a>
     <a href="#logistica">Logística</a>
     <a href="#auditoria">Auditoria</a>
+    <a href="#planilhas">Planilhas</a>
     <a href="#ajustes">Ajustes</a>
+    <a href="#fazendas" class="adm-only" hidden>Fazendas</a>
+    <a href="#pessoas" class="adm-only" hidden>Pessoas</a>
   </nav>
 </div>
 
@@ -242,6 +275,50 @@ td.ind{padding-left:24px;color:var(--muted)}tr.grp td{background:var(--accent-so
       <div class="scroll" id="aud" style="max-height:560px"></div></div>
   </section>
 
+  <!-- PLANILHAS -->
+  <section class="view" id="v-planilhas">
+    <div class="card"><div class="row" style="justify-content:space-between"><h2>Planilhas salvas</h2><button class="btn primary" id="pick2">Inserir planilhas</button></div>
+      <p class="note" id="plNote"></p>
+      <div class="drop" id="drop">Arraste as planilhas para cá</div>
+      <div class="scroll" id="plLista"></div></div>
+    <div class="card editor-only" id="plRegCard" hidden><h2>Registro</h2><p class="note">Quem enviou, substituiu ou apagou cada planilha.</p><div class="scroll" id="plReg" style="max-height:360px"></div></div>
+  </section>
+
+  <!-- FAZENDAS (ADM) -->
+  <section class="view" id="v-fazendas">
+    <div class="grid g2" style="align-items:start">
+      <div class="card"><h2>Fazendas</h2><div class="scroll" id="fzLista"></div><div class="row"><button class="btn" id="fzNova">Nova fazenda</button></div></div>
+      <div class="card"><h2 id="fzTit">Nova fazenda</h2>
+        <form class="form" id="fzForm">
+          <div class="field"><label for="fzId">Código (minúsculas e hífen, ex.: mafra)</label><input id="fzId" autocapitalize="none" spellcheck="false" required></div>
+          <div class="field"><label for="fzNome">Nome</label><input id="fzNome" required></div>
+          <div class="field"><label for="fzSenha">Senha da equipe (6+ caracteres)</label><input id="fzSenha" type="text" autocomplete="off" placeholder=""></div>
+          <label class="chk"><input type="checkbox" id="fzAtiva" checked> Fazenda ativa</label>
+          <div class="row"><button class="btn primary" type="submit">Salvar fazenda</button><span class="small" id="fzMsg" role="status"></span></div>
+        </form>
+        <p class="note">A equipe da fazenda entra no app só com essa senha e vê apenas esta fazenda. Trocar a senha desconecta quem estava usando a antiga.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PESSOAS (ADM) -->
+  <section class="view" id="v-pessoas">
+    <div class="grid g2" style="align-items:start">
+      <div class="card"><h2>Pessoas</h2><div class="scroll" id="peLista"></div><div class="row"><button class="btn" id="peNova">Nova pessoa</button></div></div>
+      <div class="card"><h2 id="peTit">Nova pessoa</h2>
+        <form class="form" id="peForm">
+          <div class="field"><label for="peNome">Nome</label><input id="peNome" required></div>
+          <div class="field"><label for="peUsr">Usuário (nome.sobrenome)</label><input id="peUsr" autocapitalize="none" spellcheck="false" placeholder="joao.silva" required></div>
+          <div class="field"><label for="peSenha">Senha (8+ caracteres)</label><input id="peSenha" type="text" autocomplete="off"></div>
+          <div class="field"><label for="pePapel">Papel</label><select id="pePapel"><option value="tecnico">Técnico: só as fazendas marcadas</option><option value="adm">Administrador: todas as fazendas e cadastros</option></select></div>
+          <div id="peFzBox"><div class="small" style="margin-bottom:4px">Fazendas liberadas</div><div class="chk" id="peFz"></div></div>
+          <label class="chk"><input type="checkbox" id="peAtiva" checked> Pessoa ativa</label>
+          <div class="row"><button class="btn primary" type="submit">Salvar pessoa</button><span class="small" id="peMsg" role="status"></span></div>
+        </form>
+      </div>
+    </div>
+  </section>
+
   <!-- AJUSTES -->
   <section class="view" id="v-ajustes">
     <div class="card">
@@ -254,15 +331,22 @@ td.ind{padding-left:24px;color:var(--muted)}tr.grp td{background:var(--accent-so
       <h2>Regras de cálculo</h2>
       <div class="grid g3" id="cfgRules"></div>
       <p class="note">O consumo de cada trato é dividido pelos dias até o próximo trato do mesmo pasto, mesmo que ele esteja na planilha do mês seguinte. Na virada do mês, os dias de cada mês usam as cabeças daquele mês. Intervalos acima do limite são tratados como pasto vazio e não entram no consumo.</p>
-      <div class="row"><button class="btn primary" id="applyCfg">Aplicar</button><span class="small">Os ajustes ficam salvos neste navegador.</span></div>
+      <div class="row"><button class="btn primary" id="applyCfg">Salvar ajustes</button><span class="small" id="cfgInfo"></span></div>
     </div>
     <div class="card">
       <h2>Formato esperado da planilha</h2>
       <p class="note">Uma aba por retiro. Linha 3, coluna B: retiro. Linha 4: mês. Linha 5: saída de fábrica (B) e animais por produto (F = MUB, G = Adensado, H a L = 0.1 a 0.5). Linha 7: cabeçalho com Pasto, Quant. Animais, Peso Estimado, Categoria, Tipo de sal, Área Retiro e uma coluna por data. Cada célula de data recebe o número de sacos fornecidos.</p>
-      <div class="drop" id="drop">Arraste as planilhas para cá</div>
     </div>
+    <div class="card editor-only" id="cfgHistCard" hidden><h2>Versões anteriores dos ajustes</h2><div class="scroll" id="cfgHist"></div></div>
   </section>
 </main>
+</div>
+<div class="modal" id="mdSenha" hidden><div class="card"><h2>Trocar minha senha</h2>
+  <form class="form" id="senhaForm">
+    <div class="field"><label for="sAtual">Senha atual</label><input type="password" id="sAtual" autocomplete="current-password" required></div>
+    <div class="field"><label for="sNova">Nova senha (8+ caracteres)</label><input type="password" id="sNova" autocomplete="new-password" minlength="8" required></div>
+    <div class="row"><button class="btn primary" type="submit">Salvar</button><button class="btn" type="button" id="sCancel">Cancelar</button><span class="small" id="sMsg" role="status"></span></div>
+  </form></div></div>
 <div id="toast" role="status"></div>
 
 <script>
@@ -300,7 +384,9 @@ function toDate(v){
 function mesNum(nome){const n=norm(nome);const k=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];for(let i=0;i<12;i++)if(n.includes(k[i]))return i+1;return 0;}
 function properMes(nome){const n=mesNum(nome);return n?MESES[n-1]:(nome==null?null:String(nome).trim());}
 
-/* Reproduz a função ModeloFormatação: uma aba = um retiro num mês */
+/* Reproduz a função ModeloFormatação: uma aba = um retiro num mês.
+   Devolve a aba num formato compacto (é o que fica salvo): linhas com os tratos [data, sacos]. */
+const ymdOf=d=>d.toISOString().slice(0,10);
 function parseSheet(aoa,arquivo,aba){
   const cell=(r,c)=>(aoa[r]&&aoa[r][c]!==undefined)?aoa[r][c]:null;
   const retiro=up(cell(2,1)), mesRaw=cell(3,1), saida=toNum(cell(4,1)), areaHdr=toNum(cell(5,1));
@@ -314,25 +400,40 @@ function parseSheet(aoa,arquivo,aba){
     else if(k.startsWith("tipodesal")||k==="produto")idx.tipo=i;else if(k.startsWith("arearetiro")||k==="area")idx.area=i;
     else{const d=toDate(h);if(d)dateCols.push([i,d]);}
   });
-  if(idx.pasto==null||!retiro)return {rows:[],erro:`Aba "${aba}" de ${arquivo}: não encontrei o retiro (B3) ou a coluna Pasto na linha 7.`};
-  const mn=mesNum(mesRaw);
-  const rows=[];let id=0;
+  if(idx.pasto==null||!retiro)return {erro:`Aba "${aba}" de ${arquivo}: não encontrei o retiro (B3) ou a coluna Pasto na linha 7.`};
+  const linhas=[];let id=0;const datas=[];
   for(let r=7;r<aoa.length;r++){
     const p=cell(r,idx.pasto);if(p==null||String(p).trim()==="")continue;id++;
-    const base={arquivo,aba,retiro,mesNome:properMes(mesRaw),mesNum:mn,saida,areaHdr,animProd,mapa,id,
-      pasto:up(typeof p==="number"?String(p):p),qtd:toNum(cell(r,idx.qtd)),peso:toNum(cell(r,idx.peso)),
-      cat:up(cell(r,idx.cat)),tipo:up(cell(r,idx.tipo)),area:toNum(cell(r,idx.area))};
-    for(const [c,d] of dateCols){const v=toNum(cell(r,c));if(v==null)continue;rows.push(Object.assign({data:d,sacos:v},base));}
+    const t=[];for(const [c,d] of dateCols){const v=toNum(cell(r,c));if(v==null)continue;t.push([ymdOf(d),v]);datas.push(d);}
+    linhas.push({id,pasto:up(typeof p==="number"?String(p):p),qtd:toNum(cell(r,idx.qtd)),peso:toNum(cell(r,idx.peso)),
+      cat:up(cell(r,idx.cat)),tipo:up(cell(r,idx.tipo)),area:toNum(cell(r,idx.area)),t});
   }
-  return {rows,erro:null};
+  if(!datas.length)return {erro:`Aba "${aba}" de ${arquivo}: nenhum fornecimento lançado.`};
+  // mês: o escrito em B4; se não der para ler, o mês mais frequente das datas. Ano: o das datas desse mês.
+  let mn=mesNum(mesRaw);
+  const moda=a=>{const c=new Map();for(const x of a)c.set(x,(c.get(x)||0)+1);return [...c].sort((x,y)=>y[1]-x[1])[0][0];};
+  if(!mn)mn=moda(datas.map(d=>d.getUTCMonth()+1));
+  const ano=moda(datas.map(d=>{const dif=mn-(d.getUTCMonth()+1);return d.getUTCFullYear()+(dif<-6?1:dif>6?-1:0);}));
+  return {aba:{retiro,ano,mes:mn,aba,arquivo,dados:{mesNome:MESES[mn-1],mesNum:mn,saida,areaHdr,animProd,mapa,linhas}}};
 }
 function parseWorkbook(wb,arquivo){
-  const out=[],erros=[];
+  const abas=[],erros=[];
   for(const aba of wb.SheetNames){
     const aoa=XLSX.utils.sheet_to_json(wb.Sheets[aba],{header:1,raw:true,defval:null});
-    const {rows,erro}=parseSheet(aoa,arquivo,aba);if(erro)erros.push(erro);out.push(...rows);
+    const r=parseSheet(aoa,arquivo,aba);if(r.erro)erros.push(r.erro);else abas.push(r.aba);
   }
-  return {rows:out,erros};
+  return {abas,erros};
+}
+/* aba salva -> lançamentos (um por trato), no formato que o motor de cálculo usa */
+function abasToRows(abas){
+  const out=[];
+  for(const a of abas){const d=a.dados||{};
+    for(const l of d.linhas||[]){
+      const base={arquivo:a.arquivo,aba:a.aba,retiro:a.retiro,mesNome:d.mesNome,mesNum:d.mesNum||a.mes,saida:d.saida,areaHdr:d.areaHdr,animProd:d.animProd,mapa:d.mapa,
+        id:l.id,pasto:l.pasto,qtd:l.qtd,peso:l.peso,cat:l.cat,tipo:l.tipo,area:l.area};
+      for(const [ymd,sacos] of l.t||[]){const [y,m,dd]=ymd.split("-").map(Number);out.push(Object.assign({data:new Date(Date.UTC(y,m-1,dd)),sacos},base));}
+    }}
+  return out;
 }
 
 /* ======================= MOTOR DE CÁLCULO ======================= */
@@ -648,37 +749,196 @@ function showPasto(k){
 }
 
 /* ======================= NAVEGAÇÃO ======================= */
-const VIEWS=["visao","relatorio","pastos","capatazes","tendencia","logistica","auditoria","ajustes"];
-function route(){const v=VIEWS.includes(location.hash.slice(1))?location.hash.slice(1):"visao";
+const VIEWS=["visao","relatorio","pastos","capatazes","tendencia","logistica","auditoria","planilhas","ajustes","fazendas","pessoas"];
+const SEM_FILTRO=["planilhas","ajustes","fazendas","pessoas"];
+function route(){let v=VIEWS.includes(location.hash.slice(1))?location.hash.slice(1):"visao";
+  if((v==="fazendas"||v==="pessoas")&&!(USER&&USER.admin))v="visao";
   VIEWS.forEach(n=>document.getElementById("v-"+n).classList.toggle("on",n===v));
   document.querySelectorAll("nav.tabs a").forEach(a=>{if(a.getAttribute("href")==="#"+v)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current");});
-  document.querySelector(".filters").style.display=v==="ajustes"?"none":"";}
+  document.querySelector(".filters").style.display=SEM_FILTRO.includes(v)?"none":"";
+  if(v==="planilhas")renderPlanilhas();
+  if(v==="fazendas")carregarFazendasAdm();
+  if(v==="pessoas")carregarPessoas();
+  if(v==="ajustes")carregarHistCfg();}
 addEventListener("hashchange",route);
 document.getElementById("fAlert").onchange=render;
+function toast(t){const e=document.getElementById("toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display="none",4000);}
+const $=s=>document.querySelector(s);
+function msg(html,warn){const m=$("#msg");m.className="notice"+(warn?" warn":"");m.innerHTML=html;m.hidden=!html;}
 
-/* ======================= CARGA DE ARQUIVOS ======================= */
-function toast(t){const e=document.getElementById("toast");e.textContent=t;e.style.display="block";clearTimeout(toast.t);toast.t=setTimeout(()=>e.style.display="none",3500);}
-function setData(raw,src,erros=[]){RAW=raw;SRC=src;ERROS=erros;ALL=compute(RAW);for(const k in F)F[k]="";refreshFilters();render();
-  const m=document.getElementById("msg");
-  if(src==="Exemplo fictício"){m.className="notice";m.innerHTML=`Mostrando dados fictícios. Clique em <b>Abrir planilhas</b> e selecione as "Folha Suplementação" (pode selecionar várias de uma vez, de meses e anos diferentes). Os arquivos são lidos só neste navegador.`;}
-  else if(erros.length){m.className="notice warn";m.innerHTML=`<b>${f0(ALL.length)} lançamentos lidos.</b> Algumas abas foram ignoradas: ${erros.slice(0,4).map(esc).join(" ")}${erros.length>4?` (+${erros.length-4})`:""}`;}
-  else{m.className="notice";m.innerHTML=`<b>${f0(ALL.length)} lançamentos lidos</b> de ${src}. Os arquivos ficaram só neste navegador; ao fechar a página, abra-os de novo.`;}
+/* ======================= BANCO (Supabase) ======================= */
+const BANCO=window.MRC_CFG||{};
+const ONLINE=!!(BANCO.url&&BANCO.chave);
+class ErroAPI extends Error{constructor(m,c){super(m);this.cod=c;}}
+const ERROS_API={senha_curta:"A senha da equipe precisa ter pelo menos 6 caracteres.",senha_repetida:"Essa senha já é usada por outra fazenda. Escolha outra.",
+  codigo_invalido:"Código inválido: use letras minúsculas, números e hífen (ex.: mafra).",nome_obrigatorio:"Informe o nome.",senha_equipe_obrigatoria:"Informe a senha da equipe.",
+  usuario_invalido_formato:"O usuário deve ser nome.sobrenome (minúsculas e números, sem acento e sem espaço).",usuario_repetido:"Esse usuário já existe.",
+  senha_curta_pessoa:"A senha precisa ter pelo menos 8 caracteres.",senha_obrigatoria:"Informe a senha inicial.",ultimo_adm:"É preciso ter pelo menos um administrador ativo.",
+  senha_atual_errada:"A senha atual não confere.",limite_envios:"Limite de envios do dia atingido para esta fazenda. Tente amanhã.",limite_abas:"Limite de planilhas guardadas atingido. Apague meses antigos.",
+  envio_grande:"Arquivo grande demais para um envio.",aba_invalida:"Uma das abas não está no formato esperado.",aba_inexistente:"Essa planilha já tinha sido apagada.",versao_inexistente:"Versão não encontrada."};
+async function rpc(fn,body){
+  if(!ONLINE)throw new ErroAPI("App sem banco configurado (config.js).","config");
+  const h={"Content-Type":"application/json",apikey:BANCO.chave};if(BANCO.chave.startsWith("eyJ"))h.Authorization="Bearer "+BANCO.chave;
+  let r;try{r=await fetch(BANCO.url.replace(/\/$/,"")+"/rest/v1/rpc/"+fn,{method:"POST",headers:h,body:JSON.stringify(body)});}
+  catch(e){throw new ErroAPI("Sem conexão com a internet.","offline");}
+  const txt=await r.text();let j=null;try{j=txt?JSON.parse(txt):null;}catch(e){}
+  if(!r.ok){const m=(j&&(j.message||j.msg))||txt||("erro "+r.status);
+    if(/sessao_expirada/.test(m))throw new ErroAPI("Sua sessão expirou. Entre de novo.","sessao");
+    if(/sem_permissao/.test(m))throw new ErroAPI("Sem permissão para isso.","permissao");
+    for(const k of Object.keys(ERROS_API).sort((x,y)=>y.length-x.length))if(m.includes(k))throw new ErroAPI(ERROS_API[k],k);
+    throw new ErroAPI("Erro no servidor: "+m,"servidor");}
+  return j;
 }
+/* armazenamento: sessão e preferências no localStorage; planilhas no IndexedDB (cabe mais) */
+const LS={get(k){try{const v=localStorage.getItem("mrcontrol-"+k);return v?JSON.parse(v):null;}catch(e){return null;}},
+  set(k,v){try{localStorage.setItem("mrcontrol-"+k,JSON.stringify(v));}catch(e){}},del(k){try{localStorage.removeItem("mrcontrol-"+k);}catch(e){}}};
+const IDB=(()=>{const mem={};let dbp=null;
+  function db(){if(dbp)return dbp;dbp=new Promise((ok,err)=>{try{const q=indexedDB.open("mrcontrol",1);q.onupgradeneeded=()=>q.result.createObjectStore("kv");q.onsuccess=()=>ok(q.result);q.onerror=()=>err(q.error);}catch(e){err(e);}});return dbp;}
+  const tx=async(modo,f)=>{const d=await db();return new Promise((ok,err)=>{const t=d.transaction("kv",modo);const st=t.objectStore("kv");const r=f(st);t.oncomplete=()=>ok(r&&r.result);t.onerror=()=>err(t.error);});};
+  return {async get(k){try{return await tx("readonly",s=>s.get(k));}catch(e){return mem[k];}},
+    async set(k,v){mem[k]=v;try{await tx("readwrite",s=>s.put(v,k));}catch(e){}},
+    async limpar(){for(const k in mem)delete mem[k];try{await tx("readwrite",s=>s.clear());}catch(e){}}};})();
+
+/* ======================= ESTADO DA SESSÃO ======================= */
+let SESSAO=null,USER=null,FAZ=null,FAZS=[],ABAS=[],CFG_INFO=null;
+function papelNome(p){return p==="adm"?"Administrador":p==="tecnico"?"Técnico":"Equipe da fazenda";}
+function aplicarPapel(){
+  const ed=!ONLINE||(USER&&USER.editor);
+  document.querySelectorAll(".adm-only").forEach(e=>e.hidden=!(USER&&USER.admin));
+  document.querySelectorAll(".editor-only").forEach(e=>e.hidden=!(ONLINE&&USER&&USER.editor));
+  $("#userBox").hidden=!ONLINE;$("#demo").hidden=ONLINE;
+  $("#btnSenha").hidden=!(USER&&USER.pessoa);
+  if(USER)$("#userInfo").innerHTML=`<b>${esc(USER.nome||papelNome(USER.papel))}</b> · ${papelNome(USER.papel)}`;
+  $("#v-ajustes").classList.toggle("ro",!ed);
+  $("#applyCfg").hidden=!ed;$("#addProd").hidden=!ed;$("#resetCfg").hidden=!ed;
+}
+function setDados(abas,src){
+  ABAS=abas;SRC=src;RAW=abasToRows(abas);ALL=compute(RAW);
+  for(const k in F)F[k]="";refreshFilters();render();
+  if($("#v-planilhas").classList.contains("on"))renderPlanilhas();
+}
+function cfgDe(dados){return Object.assign(structuredClone(DEFAULT_CFG),dados||{});}
+
+/* ---------- login ---------- */
+$("#loginForm").addEventListener("submit",async e=>{
+  e.preventDefault();const senha=$("#pwd").value;if(!senha)return;
+  const usuario=$("#usr").value.trim().toLowerCase();
+  $("#btnEntrar").disabled=true;$("#loginErr").textContent="Entrando…";
+  try{const r=usuario?await rpc("entrar_usuario",{p_usuario:usuario,p_senha:senha}):await rpc("entrar",{p_senha:senha});
+    if(r&&r.erro)throw new ErroAPI(r.erro==="muitas_tentativas"?"Muitas tentativas erradas. Espere 15 minutos e tente de novo.":usuario?"Usuário ou senha não reconhecidos.":"Senha não reconhecida.","senha");
+    $("#pwd").value="";$("#loginErr").textContent="";LS.set("sessao",r);iniciar(r);
+  }catch(err){$("#loginErr").textContent=err.message;}finally{$("#btnEntrar").disabled=false;}
+});
+$("#btnSair").onclick=async()=>{const tok=SESSAO&&SESSAO.token;SESSAO=null;USER=null;LS.del("sessao");await IDB.limpar();
+  if(tok)rpc("sair",{p_token:tok}).catch(()=>{});mostrarLogin();};
+function mostrarLogin(msgTxt){$("#appRoot").hidden=true;$("#login").hidden=false;$("#loginErr").textContent=msgTxt||"";setTimeout(()=>$("#usr").focus(),50);}
+function sessaoCaiu(){LS.del("sessao");SESSAO=null;USER=null;mostrarLogin("Sua sessão expirou ou o acesso mudou. Entre de novo.");}
+function iniciar(s){
+  SESSAO=s;USER={papel:s.papel,admin:s.papel==="adm",editor:s.papel==="adm"||s.papel==="tecnico",nome:s.nome||"",pessoa:!!s.usuario};
+  $("#login").hidden=true;$("#appRoot").hidden=false;aplicarPapel();
+  preencherFazendas(s.fazendas||[]);
+  const ult=LS.get("fazenda");
+  if(FAZS.length)abrirFazenda(FAZS.some(f=>f.id===ult)?ult:FAZS[0].id);
+  else{setDados([], "sem fazenda");msg(USER.admin?"Nenhuma fazenda cadastrada ainda. Cadastre a primeira na aba <b>Fazendas</b>.":"Nenhuma fazenda liberada para você. Fale com o administrador.",true);if(USER.admin)location.hash="fazendas";}
+  route();atualizarListaFazendas();
+}
+function preencherFazendas(lista){
+  FAZS=lista;const sel=$("#farmSel");
+  sel.innerHTML=lista.map(f=>`<option value="${esc(f.id)}">${esc(f.nome)}</option>`).join("");
+  sel.hidden=lista.length<2;if(FAZ&&lista.some(f=>f.id===FAZ))sel.value=FAZ;
+}
+async function atualizarListaFazendas(){
+  try{const l=await rpc("minhas_fazendas",{p_token:SESSAO.token});SESSAO.fazendas=l;LS.set("sessao",SESSAO);preencherFazendas(l);
+    if(l.length&&!l.some(f=>f.id===FAZ))abrirFazenda(l[0].id);}
+  catch(e){if(e.cod==="sessao")sessaoCaiu();}
+}
+$("#farmSel").onchange=e=>abrirFazenda(e.target.value);
+
+/* ---------- dados da fazenda: cópia do aparelho na hora, depois a versão do banco ---------- */
+async function abrirFazenda(fid){
+  FAZ=fid;LS.set("fazenda",fid);const nome=(FAZS.find(f=>f.id===fid)||{}).nome||fid;
+  const cache=await IDB.get("faz:"+fid);
+  if(cache){CFG=cfgDe(cache.config);CFG_INFO=cache;renderCfg();setDados(cache.abas||[],nome);msg("Atualizando…");}
+  else{CFG=cfgDe(null);renderCfg();setDados([],nome);msg("Carregando as planilhas da fazenda…");}
+  try{const d=await rpc("dados",{p_token:SESSAO.token,p_fazenda:fid});if(FAZ!==fid)return;
+    await IDB.set("faz:"+fid,d);CFG=cfgDe(d.config);CFG_INFO=d;renderCfg();setDados(d.abas||[],nome);mostrarSituacao();}
+  catch(e){if(e.cod==="sessao")return sessaoCaiu();
+    msg(cache?`Sem conexão: mostrando a cópia salva neste aparelho (${new Date(cache.gerado_em).toLocaleString("pt-BR")}).`:esc(e.message),true);}
+}
+function mostrarSituacao(){
+  if(ONLINE){
+    if(!ABAS.length)msg(`Nenhuma planilha salva para esta fazenda ainda. Clique em <b>Inserir planilhas</b> e selecione as "Folha Suplementação".`);
+    else{const u=ABAS.reduce((m,a)=>a.enviado_em>m.enviado_em?a:m,ABAS[0]);
+      msg(`<b>${ABAS.length} planilhas salvas</b> (${f0(ALL.length)} lançamentos). Último envio: ${esc(u.retiro)} ${String(u.mes).padStart(2,"0")}/${u.ano}, por ${esc(u.enviado_por)} em ${new Date(u.enviado_em).toLocaleDateString("pt-BR")}.`);}
+  }else if(SRC==="Exemplo fictício")msg(`Mostrando dados fictícios. Clique em <b>Inserir planilhas</b> e selecione as "Folha Suplementação". Elas ficam salvas neste aparelho.`);
+  else msg(`<b>${ABAS.length} planilhas salvas neste aparelho</b> (${f0(ALL.length)} lançamentos). Para compartilhar com a equipe, o administrador precisa configurar o banco (veja o LEIA-ME).`);
+}
+
+/* ======================= INSERIR PLANILHAS ======================= */
+const chaveAba=a=>a.retiro+"|"+a.ano+"|"+a.mes;
 async function readFiles(list){
   const files=[...list].filter(f=>/\.(xlsx|xlsm|xls)$/i.test(f.name)&&!f.name.startsWith("~$"));
   if(!files.length){toast("Selecione arquivos do Excel (.xlsx).");return;}
-  let all=[],erros=[];
-  for(const f of files){try{const wb=XLSX.read(await f.arrayBuffer(),{type:"array",cellDates:false});const r=parseWorkbook(wb,f.name);all.push(...r.rows);erros.push(...r.erros);}
+  if(ONLINE&&!FAZ){toast("Escolha uma fazenda antes.");return;}
+  const lidos=[],erros=[];
+  for(const f of files){try{const wb=XLSX.read(await f.arrayBuffer(),{type:"array",cellDates:false});const r=parseWorkbook(wb,f.name);lidos.push([f.name,r.abas]);erros.push(...r.erros);}
     catch(e){erros.push(`${f.name}: não foi possível ler (${e.message}).`);}}
-  if(!all.length){const m=document.getElementById("msg");m.className="notice warn";m.innerHTML=`Nenhum lançamento encontrado. Confira se as planilhas seguem o formato descrito em Ajustes. ${erros.slice(0,3).map(esc).join(" ")}`;return;}
-  setData(all,files.length===1?files[0].name:`${files.length} planilhas`,erros);
+  const total=lidos.reduce((a,[,x])=>a+x.length,0);
+  if(!total){msg(`Nenhuma aba válida encontrada. Confira o formato (aba Ajustes). ${erros.slice(0,3).map(esc).join(" ")}`,true);return;}
+  let ins=0,sub=0;
+  if(ONLINE){
+    const fazNome=(FAZS.find(f=>f.id===FAZ)||{}).nome||FAZ;
+    try{for(const [nome,abas] of lidos){
+        // em partes de até ~1,5 MB para não estourar o limite de envio
+        let lote=[],tam=0;const enviar=async()=>{if(!lote.length)return;msg(`Enviando ${esc(nome)} para ${esc(fazNome)}…`);
+          const r=await rpc("enviar_abas",{p_token:SESSAO.token,p_fazenda:FAZ,p_arquivo:nome,p_abas:lote.map(a=>({retiro:a.retiro,ano:a.ano,mes:a.mes,aba:a.aba,dados:a.dados}))});
+          ins+=r.inseridas;sub+=r.substituidas;lote=[];tam=0;};
+        for(const a of abas){const t=JSON.stringify(a.dados).length;if(tam+t>1.5e6||lote.length>=50)await enviar();lote.push(a);tam+=t;}
+        await enviar();}
+    }catch(e){if(e.cod==="sessao")return sessaoCaiu();msg(`Envio interrompido: ${esc(e.message)} ${ins+sub?`(${ins+sub} abas já tinham sido salvas)`:""}`,true);await abrirFazenda(FAZ);return;}
+    await abrirFazenda(FAZ);
+  }else{
+    const atuais=new Map((SRC==="Exemplo fictício"?[]:ABAS).map(a=>[chaveAba(a),a]));
+    for(const [nome,abas] of lidos)for(const a of abas){const k=chaveAba(a);if(atuais.has(k))sub++;else ins++;
+      atuais.set(k,Object.assign({},a,{arquivo:nome,n_tratos:a.dados.linhas.reduce((s,l)=>s+l.t.length,0),enviado_por:"este aparelho",enviado_em:new Date().toISOString()}));}
+    const lista=[...atuais.values()];await IDB.set("local-abas",lista);setDados(lista,"Planilhas deste aparelho");mostrarSituacao();
+  }
+  toast(`${ins} planilha(s) nova(s), ${sub} substituída(s).`);
+  if(erros.length)msg(`${$("#msg").innerHTML}<br>Algumas abas foram ignoradas: ${erros.slice(0,4).map(esc).join(" ")}${erros.length>4?` (+${erros.length-4})`:""}`,true);
 }
 const inp=document.getElementById("files");
-document.getElementById("pick").onclick=()=>inp.click();
+for(const id of ["pick","pick2"])document.getElementById(id).onclick=()=>inp.click();
 inp.onchange=()=>{const lista=[...inp.files];readFiles(lista).finally(()=>{inp.value="";});};
 const drop=document.getElementById("drop");
 for(const el of [drop,document.body]){el.addEventListener("dragover",e=>{e.preventDefault();drop.classList.add("over");});el.addEventListener("dragleave",()=>drop.classList.remove("over"));
   el.addEventListener("drop",e=>{e.preventDefault();drop.classList.remove("over");if(e.dataTransfer.files.length)readFiles(e.dataTransfer.files);});}
+
+/* ---------- aba Planilhas ---------- */
+async function renderPlanilhas(){
+  const pode=!ONLINE?SRC!=="Exemplo fictício":(USER&&USER.editor);
+  $("#plNote").innerHTML=ONLINE?`Planilhas salvas no banco para <b>${esc((FAZS.find(f=>f.id===FAZ)||{}).nome||"")}</b>. Reenviar o mesmo retiro e mês substitui a versão anterior. ${USER&&USER.editor?"":"Só técnicos e administradores apagam planilhas."}`
+    :SRC==="Exemplo fictício"?"O exemplo fictício não fica salvo. Insira as suas planilhas: elas ficam guardadas neste aparelho.":"Planilhas guardadas neste aparelho. Reenviar o mesmo retiro e mês substitui a versão anterior.";
+  const lista=[...ABAS].sort((a,b)=>b.ano-a.ano||b.mes-a.mes||a.retiro.localeCompare(b.retiro));
+  const cols=[{t:"Retiro",f:a=>`<b>${esc(a.retiro)}</b>`},{t:"Arquivo",f:a=>esc(a.arquivo)},{t:"Tratos",n:1,f:a=>f0(a.n_tratos??(a.dados.linhas||[]).reduce((s,l)=>s+l.t.length,0))},
+    {t:"Enviado por",f:a=>esc(a.enviado_por||"–")},{t:"Em",f:a=>a.enviado_em?new Date(a.enviado_em).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"}):"–"},
+    ...(pode?[{t:"",f:a=>`<button class="btn" data-apagar="${esc(chaveAba(a))}" aria-label="Apagar ${esc(a.retiro)} ${a.mes}/${a.ano}">Apagar</button>`}]:[])];
+  const porMes=[...groupBy(lista,a=>a.ano*100+a.mes)];
+  $("#plLista").innerHTML=porMes.length?porMes.map(([k,g],i)=>`<details class="mes"${i===0?" open":""}><summary><b>${MESES[g[0].mes-1]}/${g[0].ano}</b> <span class="small">${g.length} retiro(s) · ${f0(g.reduce((s,a)=>s+(a.n_tratos??0),0))} tratos</span></summary>${table(cols,g)}</details>`).join("")
+    :`<div class="empty">Nenhuma planilha salva ainda.</div>`;
+  document.querySelectorAll("[data-apagar]").forEach(b=>b.onclick=()=>confirmarApagar(b));
+  if(ONLINE&&USER&&USER.editor&&FAZ){try{const reg=await rpc("registro_fazenda",{p_token:SESSAO.token,p_fazenda:FAZ});
+    $("#plReg").innerHTML=table([{t:"Quando",f:r=>new Date(r.quando).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"})},{t:"Quem",f:r=>esc(r.autor)},{t:"O quê",f:r=>esc(r.acao)},{t:"Detalhe",f:r=>esc(r.detalhe||"")}],reg);}
+    catch(e){if(e.cod==="sessao")sessaoCaiu();}}
+}
+function confirmarApagar(b){
+  if(b.dataset.ok!=="1"){b.dataset.ok="1";b.textContent="Confirmar";b.classList.add("primary");setTimeout(()=>{if(b.isConnected){b.dataset.ok="";b.textContent="Apagar";b.classList.remove("primary");}},4000);return;}
+  apagarAba(b.dataset.apagar);
+}
+async function apagarAba(k){
+  const a=ABAS.find(x=>chaveAba(x)===k);if(!a)return;
+  if(ONLINE){try{await rpc("apagar_aba",{p_token:SESSAO.token,p_fazenda:FAZ,p_id:a.id});toast("Planilha apagada.");}catch(e){if(e.cod==="sessao")return sessaoCaiu();toast(e.message);}await abrirFazenda(FAZ);}
+  else{const l=ABAS.filter(x=>chaveAba(x)!==k);await IDB.set("local-abas",l);if(l.length)setDados(l,"Planilhas deste aparelho");else loadDemo();mostrarSituacao();toast("Planilha apagada deste aparelho.");}
+}
 
 /* ======================= EXPORTAR ======================= */
 function baseRows(){return filtered().map(r=>({Arquivo:r.arquivo,Retiro:r.retiro,Pasto:r.pasto,Ano:r.ano,"Mês":r.mes,"Período":r.periodo,"Data Fornecimento":dt(r.data),"Próximo Trato":dt(r.prox),
@@ -686,23 +946,24 @@ function baseRows(){return filtered().map(r=>({Arquivo:r.arquivo,Retiro:r.retiro
   "Cabeças-dia":r.cabDia,"Consumo kg/cab/dia":r.cons==null?null:+r.cons.toFixed(4),"Meta kg":r.meta==null?null:+r.meta.toFixed(4),"Limite Mín":r.lmin==null?null:+r.lmin.toFixed(4),"Limite Máx":r.lmax==null?null:+r.lmax.toFixed(4),
   "Status Consumo":r.status,"Saída Fábrica (retiro/mês)":r.saida,Alertas:r.alertas.join("; ")}));}
 document.getElementById("export").onclick=async()=>{
-  const data=baseRows();
+  const data=baseRows();if(!data.length){toast("Nada para exportar com estes filtros.");return;}
   try{const ws=XLSX.utils.json_to_sheet(data);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"Base calculada");XLSX.writeFile(wb,"mr-control_base_calculada.xlsx");toast("Planilha gerada.");}
   catch(e){}
-  // alternativa quando o navegador bloqueia downloads: copiar como tabela
-  try{const cols=Object.keys(data[0]||{});const tsv=[cols.join("\t"),...data.map(r=>cols.map(c=>r[c]??"").join("\t"))].join("\n");await navigator.clipboard.writeText(tsv);toast("Base copiada. Cole no Excel com Ctrl+V (se o download não aparecer).");}catch(e){}
+  try{const cols=Object.keys(data[0]);const tsv=[cols.join("\t"),...data.map(r=>cols.map(c=>r[c]??"").join("\t"))].join("\n");await navigator.clipboard.writeText(tsv);toast("Base copiada. Cole no Excel com Ctrl+V (se o download não aparecer).");}catch(e){}
 };
 
 /* ======================= AJUSTES ======================= */
 function renderCfg(){
   const t=document.getElementById("cfgProd");
   t.innerHTML=`<thead><tr><th>Texto no "Tipo de sal"</th><th class="n">% do peso vivo</th><th class="n">Peso do saco (kg)</th><th class="n">Preço R$/kg</th><th></th></tr></thead><tbody>`+
-    CFG.produtos.map((p,i)=>`<tr><td><input id="pc${i}" value="${esc(p.chave)}" aria-label="Texto do produto ${i+1}"></td><td><input id="pp${i}" type="number" step="0.01" min="0" value="${p.pv}" aria-label="% PV produto ${i+1}"></td><td><input id="ps${i}" type="number" step="1" min="1" value="${p.saco}" aria-label="Peso do saco produto ${i+1}"></td><td><input id="pr${i}" type="number" step="0.01" min="0" value="${p.preco??""}" placeholder="–" aria-label="Preço produto ${i+1}"></td><td><button class="btn" data-del="${i}" aria-label="Remover produto ${i+1}">Remover</button></td></tr>`).join("")+"</tbody>";
-  t.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{readCfg();CFG.produtos.splice(+b.dataset.del,1);renderCfg();});
+    CFG.produtos.map((p,i)=>`<tr><td><input id="pc${i}" value="${esc(p.chave)}" aria-label="Texto do produto ${i+1}"></td><td><input id="pp${i}" type="number" step="0.01" min="0" value="${p.pv}" aria-label="% PV produto ${i+1}"></td><td><input id="ps${i}" type="number" step="1" min="1" value="${p.saco}" aria-label="Peso do saco produto ${i+1}"></td><td><input id="pr${i}" type="number" step="0.01" min="0" value="${p.preco??""}" placeholder="–" aria-label="Preço produto ${i+1}"></td><td><button class="btn editor-btn" data-del="${i}" aria-label="Remover produto ${i+1}">Remover</button></td></tr>`).join("")+"</tbody>";
+  t.querySelectorAll("[data-del]").forEach(b=>{b.hidden=ONLINE&&!(USER&&USER.editor);b.onclick=()=>{readCfg();CFG.produtos.splice(+b.dataset.del,1);renderCfg();};});
   document.getElementById("cfgRules").innerHTML=[
     ["cTol","Tolerância da meta (±%)",CFG.tolerancia],["cDias","Intervalo máximo entre tratos (dias)",CFG.diasMax],["cAlto","Alerta de consumo alto (× limite máx.)",CFG.fatorAlto],
     ["cMud","Alerta de mudança de cabeças (%)",CFG.mudanca],["cUA","Peso da UA (kg)",CFG.pesoUA]].map(([id,l,v])=>`<div class="field" style="max-width:none"><label for="${id}">${l}</label><input id="${id}" type="number" step="any" value="${v}"></div>`).join("")+
     `<div class="field" style="max-width:none"><label for="cSeca">Meses de seca (números, ex.: 5,6,7,8,9)</label><input id="cSeca" value="${CFG.mesesSeca.join(",")}"></div>`;
+  $("#cfgInfo").textContent=ONLINE?(CFG_INFO&&CFG_INFO.config_atualizado_em?`Salvos para todos os usuários desta fazenda. Última alteração: ${CFG_INFO.config_atualizado_por||"?"}, ${new Date(CFG_INFO.config_atualizado_em).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"})}.`:"Ainda com os valores padrão nesta fazenda.")
+    +(USER&&!USER.editor?" Só técnicos e administradores alteram.":""):"Os ajustes ficam salvos neste aparelho.";
 }
 function readCfg(){
   CFG.produtos=CFG.produtos.map((p,i)=>({chave:(document.getElementById("pc"+i)?.value||"").trim().toUpperCase(),pv:toNum(document.getElementById("pp"+i)?.value)??0,saco:toNum(document.getElementById("ps"+i)?.value)||30,preco:toNum(document.getElementById("pr"+i)?.value)}));
@@ -711,8 +972,78 @@ function readCfg(){
   CFG.mesesSeca=(document.getElementById("cSeca")?.value||"").split(/[^\d]+/).map(Number).filter(n=>n>=1&&n<=12);
 }
 document.getElementById("addProd").onclick=()=>{readCfg();CFG.produtos.push({chave:"",pv:0.1,saco:30,preco:null});renderCfg();};
-document.getElementById("applyCfg").onclick=()=>{readCfg();CFG.produtos=CFG.produtos.filter(p=>p.chave);saveCfg();renderCfg();ALL=compute(RAW);refreshFilters();render();toast("Ajustes aplicados.");};
-document.getElementById("resetCfg").onclick=()=>{CFG=structuredClone(DEFAULT_CFG);saveCfg();renderCfg();ALL=compute(RAW);render();toast("Ajustes padrão restaurados.");};
+async function salvarCfg(novo,txt){
+  CFG=novo;
+  if(ONLINE){try{const quando=await rpc("salvar_config",{p_token:SESSAO.token,p_fazenda:FAZ,p_dados:CFG});CFG_INFO=Object.assign({},CFG_INFO,{config:CFG,config_atualizado_em:quando,config_atualizado_por:USER.nome});
+      const c=await IDB.get("faz:"+FAZ);if(c){c.config=CFG;c.config_atualizado_em=quando;c.config_atualizado_por=USER.nome;await IDB.set("faz:"+FAZ,c);}}
+    catch(e){if(e.cod==="sessao")return sessaoCaiu();toast(e.message);return;}}
+  else saveCfg();
+  renderCfg();ALL=compute(RAW);refreshFilters();render();carregarHistCfg();toast(txt);
+}
+document.getElementById("applyCfg").onclick=()=>{readCfg();CFG.produtos=CFG.produtos.filter(p=>p.chave);salvarCfg(CFG,ONLINE?"Ajustes salvos para todos os usuários desta fazenda.":"Ajustes salvos.");};
+document.getElementById("resetCfg").onclick=()=>salvarCfg(structuredClone(DEFAULT_CFG),"Ajustes padrão restaurados.");
+async function carregarHistCfg(){
+  if(!(ONLINE&&USER&&USER.editor&&FAZ))return;
+  try{const h=await rpc("historico_config",{p_token:SESSAO.token,p_fazenda:FAZ});
+    $("#cfgHist").innerHTML=table([{t:"Quando",f:x=>new Date(x.quando).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"})},{t:"Quem",f:x=>esc(x.autor)},{t:"Ação",f:x=>esc(x.acao)},
+      ...(USER.admin?[{t:"",f:(x,i)=>i===0?'<span class="small">atual</span>':`<button class="btn" data-rest="${x.id}">Restaurar</button>`}]:[])],h);
+    document.querySelectorAll("[data-rest]").forEach(b=>b.onclick=async()=>{try{await rpc("restaurar_config",{p_token:SESSAO.token,p_fazenda:FAZ,p_id:+b.dataset.rest});toast("Versão restaurada.");await abrirFazenda(FAZ);carregarHistCfg();}catch(e){toast(e.message);}});
+  }catch(e){if(e.cod==="sessao")sessaoCaiu();}
+}
+
+/* ======================= CADASTROS (ADM) ======================= */
+let FZ_ADM=[],PE_ADM=[];
+async function carregarFazendasAdm(){
+  if(!(USER&&USER.admin))return;
+  try{FZ_ADM=await rpc("adm_listar_fazendas",{p_token:SESSAO.token});}catch(e){if(e.cod==="sessao")return sessaoCaiu();$("#fzLista").innerHTML=`<div class="empty">${esc(e.message)}</div>`;return;}
+  $("#fzLista").innerHTML=table([{t:"Fazenda",f:f=>`<b>${esc(f.nome)}</b><br><span class="small">${esc(f.id)}</span>`},{t:"Situação",f:f=>f.ativa?'<span class="pill p-ok">Ativa</span>':'<span class="pill p-none">Desativada</span>'},
+    {t:"Planilhas",n:1,f:f=>f0(f.n_abas)},{t:"Último envio",f:f=>f.ultimo_envio?new Date(f.ultimo_envio).toLocaleDateString("pt-BR"):"–"},{t:"Técnicos",f:f=>esc((f.pessoas||[]).join(", ")||"–")},
+    {t:"",f:f=>`<button class="btn" data-fz="${esc(f.id)}">Editar</button>`}],FZ_ADM);
+  document.querySelectorAll("[data-fz]").forEach(b=>b.onclick=()=>editarFazenda(FZ_ADM.find(f=>f.id===b.dataset.fz)));
+}
+function editarFazenda(f){
+  $("#fzTit").textContent=f?`Editar: ${f.nome}`:"Nova fazenda";$("#fzId").value=f?f.id:"";$("#fzId").readOnly=!!f;$("#fzNome").value=f?f.nome:"";
+  $("#fzSenha").value="";$("#fzSenha").placeholder=f?"deixe em branco para manter a atual":"";$("#fzAtiva").checked=f?f.ativa:true;$("#fzMsg").textContent="";$("#fzNome").focus();
+}
+$("#fzNova").onclick=()=>editarFazenda(null);
+$("#fzForm").addEventListener("submit",async e=>{e.preventDefault();$("#fzMsg").textContent="Salvando…";
+  try{const r=await rpc("adm_salvar_fazenda",{p_token:SESSAO.token,p_id:$("#fzId").value.trim().toLowerCase(),p_nome:$("#fzNome").value,p_senha:$("#fzSenha").value.trim()||null,p_ativa:$("#fzAtiva").checked});
+    $("#fzMsg").textContent=r.criada?"Fazenda cadastrada.":"Fazenda atualizada.";$("#fzSenha").value="";await carregarFazendasAdm();editarFazenda(FZ_ADM.find(f=>f.id===r.id));$("#fzMsg").textContent=r.criada?"Fazenda cadastrada.":"Fazenda atualizada.";
+    await atualizarListaFazendas();if(!FAZ&&FAZS.length)abrirFazenda(FAZS[0].id);}
+  catch(err){if(err.cod==="sessao")return sessaoCaiu();$("#fzMsg").textContent=err.message;}});
+async function carregarPessoas(){
+  if(!(USER&&USER.admin))return;
+  try{[PE_ADM,FZ_ADM]=await Promise.all([rpc("adm_listar_pessoas",{p_token:SESSAO.token}),rpc("adm_listar_fazendas",{p_token:SESSAO.token})]);}
+  catch(e){if(e.cod==="sessao")return sessaoCaiu();$("#peLista").innerHTML=`<div class="empty">${esc(e.message)}</div>`;return;}
+  const nomeFz=id=>(FZ_ADM.find(f=>f.id===id)||{}).nome||id;
+  $("#peLista").innerHTML=table([{t:"Pessoa",f:p=>`<b>${esc(p.nome)}</b><br><span class="small">${esc(p.usuario)}</span>`},{t:"Papel",f:p=>papelNome(p.papel)},
+    {t:"Fazendas",f:p=>p.papel==="adm"?"todas":esc(p.fazendas.map(nomeFz).join(", ")||"nenhuma")},{t:"Situação",f:p=>p.ativa?'<span class="pill p-ok">Ativa</span>':'<span class="pill p-none">Desativada</span>'},
+    {t:"",f:p=>`<button class="btn" data-pe="${p.id}">Editar</button>`}],PE_ADM);
+  document.querySelectorAll("[data-pe]").forEach(b=>b.onclick=()=>editarPessoa(PE_ADM.find(p=>p.id===+b.dataset.pe)));
+  editarPessoa(PE_EDIT?PE_ADM.find(p=>p.id===PE_EDIT.id):null);
+}
+let PE_EDIT=null;
+function editarPessoa(p){
+  PE_EDIT=p||null;$("#peTit").textContent=p?`Editar: ${p.nome}`:"Nova pessoa";$("#peNome").value=p?p.nome:"";$("#peUsr").value=p?p.usuario:"";$("#peSenha").value="";
+  $("#peSenha").placeholder=p?"deixe em branco para manter a atual":"";$("#pePapel").value=p?p.papel:"tecnico";$("#peAtiva").checked=p?p.ativa:true;$("#peMsg").textContent="";
+  $("#peFz").innerHTML=FZ_ADM.map(f=>`<label><input type="checkbox" value="${esc(f.id)}"${p&&p.fazendas.includes(f.id)?" checked":""}> ${esc(f.nome)}</label>`).join("")||'<span class="small">Cadastre fazendas primeiro.</span>';
+  $("#peFzBox").hidden=$("#pePapel").value!=="tecnico";
+}
+$("#pePapel").onchange=()=>{$("#peFzBox").hidden=$("#pePapel").value!=="tecnico";};
+$("#peNova").onclick=()=>editarPessoa(null);
+$("#peForm").addEventListener("submit",async e=>{e.preventDefault();$("#peMsg").textContent="Salvando…";
+  const fz=[...document.querySelectorAll("#peFz input:checked")].map(i=>i.value);
+  try{const id=await rpc("adm_salvar_pessoa",{p_token:SESSAO.token,p_id:PE_EDIT?PE_EDIT.id:null,p_nome:$("#peNome").value,p_usuario:$("#peUsr").value.trim().toLowerCase(),
+      p_senha:$("#peSenha").value||null,p_papel:$("#pePapel").value,p_ativa:$("#peAtiva").checked,p_fazendas:fz});
+    PE_EDIT={id};await carregarPessoas();$("#peMsg").textContent="Salvo.";}
+  catch(err){if(err.cod==="sessao")return sessaoCaiu();$("#peMsg").textContent=err.message;}});
+/* ---------- minha senha ---------- */
+$("#btnSenha").onclick=()=>{$("#mdSenha").hidden=false;$("#sMsg").textContent="";$("#sAtual").value="";$("#sNova").value="";$("#sAtual").focus();};
+$("#sCancel").onclick=()=>{$("#mdSenha").hidden=true;};
+$("#mdSenha").addEventListener("keydown",e=>{if(e.key==="Escape")$("#mdSenha").hidden=true;});
+$("#senhaForm").addEventListener("submit",async e=>{e.preventDefault();$("#sMsg").textContent="Salvando…";
+  try{await rpc("trocar_senha",{p_token:SESSAO.token,p_atual:$("#sAtual").value,p_nova:$("#sNova").value});$("#mdSenha").hidden=true;toast("Senha alterada. Os outros aparelhos foram desconectados.");}
+  catch(err){if(err.cod==="sessao")return sessaoCaiu();$("#sMsg").textContent=err.message;}});
 
 /* ======================= EXEMPLO FICTÍCIO ======================= */
 /* Gera planilhas no mesmo layout das "Folha Suplementação" e passa pelo mesmo leitor */
@@ -740,14 +1071,21 @@ function demoWorkbooks(){
   }
   return books;
 }
-function loadDemo(){let all=[];for(const [n,wb] of demoWorkbooks()){const buf=XLSX.write(wb,{type:"array",bookType:"xlsx"});all.push(...parseWorkbook(XLSX.read(buf,{type:"array",cellDates:false}),n).rows);}setData(all,"Exemplo fictício");}
+function loadDemo(){let abas=[];for(const [n,wb] of demoWorkbooks()){const buf=XLSX.write(wb,{type:"array",bookType:"xlsx"});abas.push(...parseWorkbook(XLSX.read(buf,{type:"array",cellDates:false}),n).abas);}setDados(abas,"Exemplo fictício");mostrarSituacao();}
 document.getElementById("demo").onclick=loadDemo;
 
 /* ======================= INÍCIO ======================= */
-renderCfg();route();
-if(typeof XLSX==="undefined"){document.getElementById("msg").className="notice warn";document.getElementById("msg").textContent="Não foi possível carregar o leitor de Excel. Verifique a conexão com a internet e recarregue a página.";}
-else loadDemo();
-window.__app={compute,parseWorkbook,agg,animaisSup,pastosAgg,get ALL(){return ALL;}};
+(async()=>{
+  if(typeof XLSX==="undefined"){msg("Não foi possível carregar o leitor de Excel. Verifique a conexão com a internet e recarregue a página.",true);}
+  if(ONLINE){const s=LS.get("sessao");if(s&&s.token)iniciar(s);else mostrarLogin();return;}
+  // sem banco: modo local. As planilhas inseridas ficam salvas neste aparelho.
+  aplicarPapel();renderCfg();route();
+  const loc=await IDB.get("local-abas");
+  if(loc&&loc.length){setDados(loc,"Planilhas deste aparelho");mostrarSituacao();}else if(typeof XLSX!=="undefined")loadDemo();
+})();
+// funcionamento sem internet (só no endereço próprio do app; a prévia do Claude não permite)
+if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost")){try{navigator.serviceWorker.register("sw.js").catch(()=>{});}catch(e){}}
+window.__app={compute,parseWorkbook,abasToRows,agg,animaisSup,pastosAgg,get ALL(){return ALL;},get ABAS(){return ABAS;}};
 </script>
 </body>
 </html>

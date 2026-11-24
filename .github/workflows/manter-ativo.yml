@@ -1,0 +1,35 @@
+name: Manter ativo
+# 1) O Supabase gratuito pausa o projeto depois de 7 dias sem uso: a cada 3 dias este passo chama a função
+#    manter_ativo() do banco (não lê nem grava nenhum dado de fazenda).
+# 2) O GitHub desliga agendamentos de repositórios públicos sem atividade por 60 dias: no dia 1 de cada mês
+#    este passo grava só a data num arquivo.
+on:
+  schedule:
+    - cron: "23 11 */3 * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  manter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Chamar o banco
+        run: |
+          URL=$(grep -oE 'url: *"[^"]*"' config.js | sed -E 's/.*"([^"]*)"/\1/')
+          CHAVE=$(grep -oE 'chave: *"[^"]*"' config.js | sed -E 's/.*"([^"]*)"/\1/')
+          if [ -z "$URL" ] || [ -z "$CHAVE" ]; then echo "Banco ainda não configurado em config.js"; exit 0; fi
+          case "$CHAVE" in
+            eyJ*) curl -sS -f -X POST "$URL/rest/v1/rpc/manter_ativo" -H "apikey: $CHAVE" -H "Authorization: Bearer $CHAVE" -H "Content-Type: application/json" -d '{}' > /dev/null ;;
+            *)    curl -sS -f -X POST "$URL/rest/v1/rpc/manter_ativo" -H "apikey: $CHAVE" -H "Content-Type: application/json" -d '{}' > /dev/null ;;
+          esac
+          echo "Banco respondeu."
+      - name: Registrar atividade (dia 1)
+        run: |
+          if [ "$(date -u +%d)" != "01" ] && [ "${{ github.event_name }}" != "workflow_dispatch" ]; then echo "não é dia 1"; exit 0; fi
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .ultima-atividade
+          git config user.name "mr-control-robo"
+          git config user.email "mr-control-robo@users.noreply.github.com"
+          git add .ultima-atividade
+          git commit -m "manter agendamento ativo" || echo "nada a fazer"
+          git push

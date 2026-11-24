@@ -448,6 +448,9 @@ end $$;
 
 -- ---------- permissões: o app (chave pública "anon") só executa as funções abaixo ----------
 revoke execute on all functions in schema public from public, anon, authenticated;
+-- o app precisa enxergar o schema public para chamar as funções (vale mesmo se o projeto foi criado
+-- com "Grant API access to new tables automatically" desmarcado). Tabelas continuam fechadas.
+grant usage on schema public to anon;
 grant execute on function
   public.entrar(text), public.entrar_usuario(text, text), public.sair(text), public.minhas_fazendas(text),
   public.trocar_senha(text, text, text), public.dados(text, text), public.enviar_abas(text, text, text, jsonb),

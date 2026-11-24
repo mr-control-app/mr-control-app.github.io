@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mr. Control</title>
 <meta name="description" content="Mr. Control: controle de consumo de suplemento a pasto a partir das Folhas de Suplementação.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22%3E%3Crect width=%2264%22 height=%2264%22 rx=%2214%22 fill=%22%232D5B8A%22/%3E%3Ctext x=%2232%22 y=%2242%22 font-family=%22Arial%22 font-weight=%22700%22 font-size=%2226%22 fill=%22white%22 text-anchor=%22middle%22%3EMC%3C/text%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#17392A">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -13,8 +16,10 @@
 <style>
 /* Layout: barra de filtros fixa + abas; cada aba é um painel de cartões em grade que vira coluna única no celular. */
 :root{
-  --bg:#F3F4F1; --surface:#FFFFFF; --ink:#1D2622; --muted:#5E6B65; --line:#DCE1DC;
-  --accent:#2D5B8A; --accent-soft:#E4ECF5;
+  /* marca Mr. Control: verde #17392A, creme #F2E8D6, azul #7FC4D8 */
+  --brand:#17392A; --brand-ink:#F2E8D6; --brand-sky:#7FC4D8;
+  --bg:#F2F3EE; --surface:#FFFFFF; --ink:#16271F; --muted:#56665E; --line:#D9DED6;
+  --accent:#2B7A99; --accent-soft:#E3F1F6;
   --ok:#2E8552; --ok-soft:#E1F1E7; --high:#C2412F; --high-soft:#F8E3DF; --low:#C98516; --low-soft:#F8EDD8; --none:#8A938F; --none-soft:#ECEEEC;
   --band:rgba(46,133,82,.13);
   --display:"IBM Plex Sans Condensed","Arial Narrow",Arial,sans-serif;
@@ -23,13 +28,15 @@
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#141A18; --surface:#1C2421; --ink:#E5EBE7; --muted:#9AA8A1; --line:#2E3934;
-  --accent:#7FA9D6; --accent-soft:#22303F;
+  --brand:#10281D; --brand-ink:#F2E8D6; --brand-sky:#7FC4D8;
+  --bg:#0E1A14; --surface:#152A20; --ink:#E9EEE8; --muted:#9FB0A6; --line:#24402F;
+  --accent:#7FC4D8; --accent-soft:#1B3A3E;
   --ok:#5CBF84; --ok-soft:#1E3327; --high:#E8735F; --high-soft:#3A2420; --low:#E6AE4F; --low-soft:#3A2F1B; --none:#7D8883; --none-soft:#262E2B;
   --band:rgba(92,191,132,.16); color-scheme:dark;}}
 :root[data-theme="dark"]{
-  --bg:#141A18; --surface:#1C2421; --ink:#E5EBE7; --muted:#9AA8A1; --line:#2E3934;
-  --accent:#7FA9D6; --accent-soft:#22303F;
+  --brand:#10281D; --brand-ink:#F2E8D6; --brand-sky:#7FC4D8;
+  --bg:#0E1A14; --surface:#152A20; --ink:#E9EEE8; --muted:#9FB0A6; --line:#24402F;
+  --accent:#7FC4D8; --accent-soft:#1B3A3E;
   --ok:#5CBF84; --ok-soft:#1E3327; --high:#E8735F; --high-soft:#3A2420; --low:#E6AE4F; --low-soft:#3A2F1B; --none:#7D8883; --none-soft:#262E2B;
   --band:rgba(92,191,132,.16); color-scheme:dark;}
 *{box-sizing:border-box}
@@ -44,7 +51,13 @@ button,select,input{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .wrap{max-width:1280px;margin:0 auto;padding:0 16px}
-header.top{background:var(--surface);border-bottom:1px solid var(--line)}
+header.top{background:var(--brand);color:var(--brand-ink)}
+header.top .brand{flex-direction:row;align-items:center;gap:12px}
+header.top .brand img{width:48px;height:48px;border-radius:11px;flex:none}
+header.top .brand small{color:var(--brand-ink);opacity:.75}
+header.top .btn{background:transparent;border-color:rgba(242,232,214,.45);color:var(--brand-ink)}
+header.top .btn:hover{border-color:var(--brand-sky)}
+header.top .btn.primary{background:var(--brand-sky);border-color:var(--brand-sky);color:var(--brand)}
 .top .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding-top:14px;padding-bottom:14px}
 .brand{display:flex;flex-direction:column;gap:2px;margin-right:auto}
 .brand small{color:var(--muted);font-size:13px}
@@ -54,7 +67,7 @@ header.top{background:var(--surface);border-bottom:1px solid var(--line)}
 :root[data-theme="dark"] .btn.primary{color:#0F1714}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn.primary{color:#0F1714}}
 .source{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.notice{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;margin:14px 0 0;padding:10px 14px;border-radius:8px;background:var(--accent-soft);font-size:14px}
+.notice{display:block;margin:14px 0 0;padding:10px 14px;border-radius:8px;background:var(--accent-soft);font-size:14px}
 .notice.warn{background:var(--low-soft)}
 .filters{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
 @media (max-width:700px){.filters{position:static}}
@@ -118,8 +131,8 @@ td.ind{padding-left:24px;color:var(--muted)}tr.grp td{background:var(--accent-so
 <header class="top">
   <div class="wrap">
     <div class="brand">
-      <h1>Mr. Control</h1>
-      <small id="srcLabel">Exemplo fictício</small>
+      <img src="icone-192.png" alt="" width="48" height="48">
+      <div style="display:flex;flex-direction:column;gap:2px"><h1>Mr. Control</h1><small id="srcLabel">Exemplo fictício</small></div>
     </div>
     <div class="source">
       <input type="file" id="files" accept=".xlsx,.xlsm,.xls" multiple hidden>

@@ -19,6 +19,7 @@ jobs:
           URL=$(grep -oE 'url: *"[^"]*"' config.js | sed -E 's/.*"([^"]*)"/\1/')
           CHAVE=$(grep -oE 'chave: *"[^"]*"' config.js | sed -E 's/.*"([^"]*)"/\1/')
           if [ -z "$URL" ] || [ -z "$CHAVE" ]; then echo "Banco ainda não configurado em config.js"; exit 0; fi
+          URL="${URL%/}"; URL="${URL%/rest/v1}"; URL="${URL%/}"
           case "$CHAVE" in
             eyJ*) curl -sS -f -X POST "$URL/rest/v1/rpc/manter_ativo" -H "apikey: $CHAVE" -H "Authorization: Bearer $CHAVE" -H "Content-Type: application/json" -d '{}' > /dev/null ;;
             *)    curl -sS -f -X POST "$URL/rest/v1/rpc/manter_ativo" -H "apikey: $CHAVE" -H "Content-Type: application/json" -d '{}' > /dev/null ;;

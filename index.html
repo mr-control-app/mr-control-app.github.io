@@ -779,7 +779,7 @@ const ERROS_API={senha_curta:"A senha da equipe precisa ter pelo menos 6 caracte
 async function rpc(fn,body){
   if(!ONLINE)throw new ErroAPI("App sem banco configurado (config.js).","config");
   const h={"Content-Type":"application/json",apikey:BANCO.chave};if(BANCO.chave.startsWith("eyJ"))h.Authorization="Bearer "+BANCO.chave;
-  let r;try{r=await fetch(BANCO.url.replace(/\/$/,"")+"/rest/v1/rpc/"+fn,{method:"POST",headers:h,body:JSON.stringify(body)});}
+  let r;try{r=await fetch(BANCO.url.trim().replace(/\/+$/,"").replace(/\/rest\/v1$/,"").replace(/\/+$/,"")+"/rest/v1/rpc/"+fn,{method:"POST",headers:h,body:JSON.stringify(body)});}
   catch(e){throw new ErroAPI("Sem conexão com a internet.","offline");}
   const txt=await r.text();let j=null;try{j=txt?JSON.parse(txt):null;}catch(e){}
   if(!r.ok){const m=(j&&(j.message||j.msg))||txt||("erro "+r.status);

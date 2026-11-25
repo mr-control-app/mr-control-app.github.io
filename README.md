@@ -68,6 +68,41 @@ Cada envio, substituição e exclusão de planilha fica registrado com nome e ho
 O Supabase gratuito pausa o projeto depois de 7 dias sem uso. O robô `Manter ativo` (aba **Actions**) chama o banco
 a cada 3 dias sozinho. Para testar: **Actions → Manter ativo → Run workflow** (deve terminar com ✅).
 
+### 5. Backup semanal por e-mail
+Toda **segunda-feira ~07:17** (Brasília) o robô `Backup semanal por e-mail` manda aos **administradores ativos que
+têm e-mail** (aba **Pessoas**) um anexo `mr-control-backup-AAAA-MM-DD.json.gz` com todas as fazendas, planilhas,
+ajustes, históricos e o registro. **Sem senhas** (nem criptografadas) e sem sessões. O backup não fica guardado
+no GitHub (o repositório é público): só vai por e-mail, e o log do robô mostra apenas contagens.
+
+**a) Atualizar o banco (uma vez).** Supabase → **SQL Editor → New query** → cole o arquivo
+`supabase/01_mr_control.sql` inteiro de novo → **Run**. Ele só acrescenta o campo de e-mail e as funções do backup;
+não apaga nada. (Se aparecer aviso de "destructive operation", é só a troca da função de salvar pessoa: confirme.)
+
+**b) E-mail dos administradores.** No app, aba **Pessoas** → **Editar** cada administrador → preencha **E-mail** → Salvar.
+
+**c) Endereço de conexão do banco.** Supabase → botão **Connect** (topo) → aba **Connection string** →
+em *Method* escolha **Session pooler** → copie o endereço que começa com `postgresql://postgres.`…
+Troque `[YOUR-PASSWORD]` pela senha do banco criada junto com o projeto. Esqueceu? **Project Settings → Database →
+Reset database password** (não afeta o app, que usa a chave publicável).
+
+**d) Senha de app do Gmail** (a conta que vai *enviar*; pode ser a mesma do Mr. Report). Precisa ter verificação em
+duas etapas ligada. Abra https://myaccount.google.com/apppasswords → nome `Mr Control` → **Criar** → copie as 16 letras.
+
+**e) Segredos no GitHub.** Repositório → **Settings → Secrets and variables → Actions → New repository secret**,
+crie os três:
+
+| Nome | Valor |
+|---|---|
+| `DATABASE_URL` | o endereço do passo c, já com a senha |
+| `GMAIL_USUARIO` | o Gmail que envia, ex.: `mrcontrol.app@gmail.com` |
+| `GMAIL_SENHA_APP` | as 16 letras do passo d |
+
+**f) Testar.** **Actions → Backup semanal por e-mail → Run workflow**. Em ~1 min deve ficar ✅ e o e-mail chega
+(confira o spam na primeira vez). Se ficar ❌, abra a execução: a mensagem diz o que faltou (segredo, senha do Gmail
+ou nenhum adm com e-mail). Cada envio também aparece no **registro** do app como "backup enviado".
+
+**Abrir o backup:** é um JSON compactado. No Windows, o 7-Zip descompacta o `.gz`; o `.json` abre em qualquer editor.
+
 ---
 
 ## Sem banco configurado

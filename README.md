@@ -27,8 +27,8 @@ Nenhum dado de fazenda e nenhuma senha ficam neste repositório.
 | Papel | Como entra | Pode |
 |---|---|---|
 | **Administrador** | usuário (nome.sobrenome) + senha | todas as fazendas; cadastra fazendas e pessoas; apaga planilhas; edita e restaura ajustes |
-| **Técnico** | usuário + senha | só as fazendas marcadas para ele; envia e apaga planilhas; edita ajustes |
-| **Equipe da fazenda** | só a senha da fazenda | vê a própria fazenda e envia planilhas |
+| **Técnico** | usuário + senha | só as fazendas marcadas para ele; envia e apaga planilhas e lançamentos; edita ajustes |
+| **Equipe da fazenda** | só a senha da fazenda | vê a própria fazenda, envia planilhas e lança tratos |
 
 Segurança: senhas guardadas com criptografia; 10 senhas erradas em 15 minutos bloqueiam o endereço por 15 minutos;
 sessão vale 180 dias no aparelho; trocar a senha de uma fazenda ou desativar uma pessoa desconecta na hora.
@@ -60,15 +60,35 @@ Cada envio, substituição e exclusão de planilha fica registrado com nome e ho
 ### 3. Primeiro uso
 7. Entre com o seu usuário. Na aba **Fazendas**, cadastre cada fazenda: código (ex.: `mafra`), nome e **senha da equipe**.
 8. Na aba **Pessoas**, cadastre os técnicos e marque as fazendas de cada um.
-9. Escolha a fazenda e clique em **Inserir planilhas**. Pode selecionar várias de uma vez.
+9. Escolha a fazenda, abra a aba **Lançamentos** e clique em **Lançar planilhas**. Pode selecionar várias de uma vez.
    Reenviar o mesmo retiro e mês **substitui** a versão anterior (para correções).
 10. No celular: abra o endereço e use "Adicionar à tela inicial".
+
+### Atualização: aba Lançamentos (rodar uma vez se o banco já existia)
+Supabase → **SQL Editor → New query** → cole o arquivo `supabase/01_mr_control.sql` inteiro → **Run**.
+Ele só cria a tabela `lancamentos` e as funções `lancar` / `apagar_lancamento`; não apaga nada.
+Antes disso, o app abre normalmente e só o botão **Lançar** avisa que falta atualizar o banco.
 
 ### 4. Manter ativo
 O Supabase gratuito pausa o projeto depois de 7 dias sem uso. O robô `Manter ativo` (aba **Actions**) chama o banco
 a cada 3 dias sozinho. Para testar: **Actions → Manter ativo → Run workflow** (deve terminar com ✅).
 
 ---
+
+## Aba Lançamentos
+- **Lançar planilhas**: envia as "Folha Suplementação" (saiu do cabeçalho e fica aqui).
+- **Lançar consumo**: um trato por vez, pensado para o celular. Retiro → número do pasto → número de animais →
+  tipo de sal → sacos → data. Ao escolher o pasto, animais, tipo de sal, peso e categoria vêm do último trato
+  daquele pasto (dá para mudar). A data começa em **hoje** e só aceita datas passadas (o banco também recusa
+  data futura, no horário de Brasília). Antes de lançar aparece um resumo; depois, o consumo do trato anterior do
+  pasto, que o novo lançamento acabou de fechar.
+- **Quem lança**: administrador, técnico e equipe da fazenda (como no envio de planilhas). **Quem apaga**:
+  administrador e técnico. Tudo fica no registro (lançou / corrigiu / apagou lançamento).
+- **Mesmo pasto e dia** lançado de novo **corrige** o anterior (não duplica).
+- **Planilha x app**: se a planilha do mês trouxer o mesmo retiro, pasto e dia, vale a planilha e o lançamento do
+  app aparece como "Já está na planilha", sem contar em dobro. Reenviar a planilha não apaga lançamentos do app.
+- **Sem internet**: o lançamento fica guardado no aparelho, já entra nas contas e é enviado sozinho quando a
+  conexão volta. Ao clicar em Sair com algo pendente, o app avisa antes.
 
 ## Sem banco configurado
 Com `config.js` vazio, o app funciona em **modo local**: as planilhas inseridas ficam salvas só naquele aparelho.

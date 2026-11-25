@@ -136,6 +136,14 @@ td.ind{padding-left:24px;color:var(--muted)}tr.grp td{background:var(--accent-so
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:grid;place-items:center;padding:16px;z-index:20}
 .modal .card{width:100%;max-width:420px}
 .form{display:grid;gap:10px}.form .field{max-width:none}
+.lanc .field label{font-size:13px;font-weight:600;color:var(--ink)}
+.lanc .field input,.lanc .field select{font-size:17px;padding:10px 12px;border-radius:8px}
+.lanc .dias{display:flex;gap:6px;margin-top:4px}.lanc .dias .btn{padding:5px 12px;font-size:13px}
+.lc-go{font-size:16px;padding:11px 24px}
+.lc-ult{margin-top:-4px;min-height:18px}
+.lc-resumo{padding:10px 12px;border-radius:8px;background:var(--accent-soft);font-size:14px;line-height:1.55}
+.lc-resumo:empty{display:none}
+#lcMais summary{cursor:pointer;padding:4px 0}#lcMais[open]{display:grid;gap:10px}
 .chk{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px}
 .chk label{display:flex;gap:6px;align-items:center}
 .ro input{pointer-events:none;opacity:.75}
@@ -165,7 +173,6 @@ details.mes{border-bottom:1px solid var(--line);padding:6px 0}details.mes summar
     </div>
     <div class="source">
       <input type="file" id="files" accept=".xlsx,.xlsm,.xls" multiple hidden>
-      <button class="btn primary" id="pick">Inserir planilhas</button>
       <button class="btn" id="demo">Exemplo fictício</button>
       <button class="btn" id="export">Baixar base calculada</button>
       <div class="user" id="userBox" hidden><span id="userInfo"></span><button class="btn" id="btnSenha" hidden>Minha senha</button><button class="btn" id="btnSair">Sair</button></div>
@@ -186,9 +193,10 @@ details.mes{border-bottom:1px solid var(--line);padding:6px 0}details.mes summar
 </div>
 
 <div class="wrap">
-  <div id="msg" class="notice" role="status">Mostrando dados fictícios. Clique em <b>Abrir planilhas</b> e selecione as "Folha Suplementação" (pode selecionar várias de uma vez, de meses e anos diferentes). Os arquivos são lidos só neste navegador.</div>
+  <div id="msg" class="notice" role="status">Mostrando dados fictícios. Na aba <b>Lançamentos</b>, clique em <b>Lançar planilhas</b> e selecione as "Folha Suplementação" (pode selecionar várias de uma vez, de meses e anos diferentes). Os arquivos são lidos só neste navegador.</div>
   <nav class="tabs" aria-label="Telas">
     <a href="#visao">Visão geral</a>
+    <a href="#lancamentos">Lançamentos</a>
     <a href="#relatorio">Relatório</a>
     <a href="#pastos">Pastos</a>
     <a href="#capatazes">Capatazes</a>
@@ -276,8 +284,43 @@ details.mes{border-bottom:1px solid var(--line);padding:6px 0}details.mes summar
   </section>
 
   <!-- PLANILHAS -->
+  <section class="view" id="v-lancamentos">
+    <div class="grid g2" style="align-items:start">
+      <div class="card"><h2>Lançar consumo</h2>
+        <p class="note">Um trato por vez. Lançar de novo o mesmo pasto no mesmo dia corrige o anterior.</p>
+        <form class="form lanc" id="lcForm" autocomplete="off" novalidate>
+          <div class="field"><label for="lcRet">Retiro</label><select id="lcRet"></select>
+            <input id="lcRetNovo" placeholder="Nome do retiro" autocapitalize="characters" aria-label="Nome do novo retiro" hidden></div>
+          <div class="field"><label for="lcPasto">Número do pasto</label><input id="lcPasto" list="lcPastos" autocapitalize="characters" spellcheck="false" placeholder="ex.: 12A"><datalist id="lcPastos"></datalist></div>
+          <div class="lc-ult small" id="lcUlt" aria-live="polite"></div>
+          <div class="field"><label for="lcQtd">Número de animais</label><input id="lcQtd" type="number" inputmode="numeric" min="1" step="1"></div>
+          <div class="field"><label for="lcTipo">Tipo de sal</label><input id="lcTipo" list="lcTipos" autocapitalize="characters" spellcheck="false"><datalist id="lcTipos"></datalist></div>
+          <div class="field"><label for="lcSacos">Sacos fornecidos</label><input id="lcSacos" type="number" inputmode="decimal" min="0.5" step="0.5"></div>
+          <div class="field"><label for="lcData">Data</label><input id="lcData" type="date">
+            <div class="dias"><button type="button" class="btn" data-dia="0">Hoje</button><button type="button" class="btn" data-dia="1">Ontem</button><button type="button" class="btn" data-dia="2">Anteontem</button></div></div>
+          <details id="lcMais"><summary class="small">Peso e categoria (opcional: vêm do último trato do pasto)</summary>
+            <div class="field"><label for="lcPeso">Peso estimado (kg)</label><input id="lcPeso" type="number" inputmode="numeric" min="20" max="1500"></div>
+            <div class="field"><label for="lcCat">Categoria</label><input id="lcCat" list="lcCats" autocapitalize="characters"><datalist id="lcCats"></datalist></div>
+          </details>
+          <div class="lc-resumo" id="lcResumo" aria-live="polite"></div>
+          <div class="row"><button class="btn primary lc-go" type="submit" id="lcBtn">Lançar</button></div>
+          <div class="small" id="lcMsg" role="status"></div>
+        </form>
+      </div>
+      <div class="card"><h2>Lançar planilhas</h2>
+        <p class="note">Selecione as "Folha Suplementação" (.xlsx). Pode selecionar várias de uma vez, de meses e anos diferentes. Reenviar o mesmo retiro e mês substitui a versão anterior.</p>
+        <div class="row"><button class="btn primary lc-go" id="pick">Lançar planilhas</button></div>
+        <div class="drop" id="drop2" style="margin-top:12px">ou arraste as planilhas para cá</div>
+      </div>
+    </div>
+    <div class="card"><div class="row" style="justify-content:space-between"><h2>Lançamentos feitos no app</h2><span class="small" id="lcConta"></span></div>
+      <div class="notice warn" id="lcFila" hidden></div>
+      <p class="note">Se a planilha do mês trouxer o mesmo retiro, pasto e dia, vale a planilha e o lançamento do app não conta em dobro.</p>
+      <div class="scroll" id="lcLista" style="max-height:480px"></div></div>
+  </section>
+
   <section class="view" id="v-planilhas">
-    <div class="card"><div class="row" style="justify-content:space-between"><h2>Planilhas salvas</h2><button class="btn primary" id="pick2">Inserir planilhas</button></div>
+    <div class="card"><div class="row" style="justify-content:space-between"><h2>Planilhas salvas</h2><button class="btn primary" id="pick2">Lançar planilhas</button></div>
       <p class="note" id="plNote"></p>
       <div class="drop" id="drop">Arraste as planilhas para cá</div>
       <div class="scroll" id="plLista"></div></div>
@@ -749,14 +792,15 @@ function showPasto(k){
 }
 
 /* ======================= NAVEGAÇÃO ======================= */
-const VIEWS=["visao","relatorio","pastos","capatazes","tendencia","logistica","auditoria","planilhas","ajustes","fazendas","pessoas"];
-const SEM_FILTRO=["planilhas","ajustes","fazendas","pessoas"];
+const VIEWS=["visao","lancamentos","relatorio","pastos","capatazes","tendencia","logistica","auditoria","planilhas","ajustes","fazendas","pessoas"];
+const SEM_FILTRO=["lancamentos","planilhas","ajustes","fazendas","pessoas"];
 function route(){let v=VIEWS.includes(location.hash.slice(1))?location.hash.slice(1):"visao";
   if((v==="fazendas"||v==="pessoas")&&!(USER&&USER.admin))v="visao";
   VIEWS.forEach(n=>document.getElementById("v-"+n).classList.toggle("on",n===v));
   document.querySelectorAll("nav.tabs a").forEach(a=>{if(a.getAttribute("href")==="#"+v)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current");});
   document.querySelector(".filters").style.display=SEM_FILTRO.includes(v)?"none":"";
   if(v==="planilhas")renderPlanilhas();
+  if(v==="lancamentos")renderLanc();
   if(v==="fazendas")carregarFazendasAdm();
   if(v==="pessoas")carregarPessoas();
   if(v==="ajustes")carregarHistCfg();}
@@ -770,7 +814,9 @@ function msg(html,warn){const m=$("#msg");m.className="notice"+(warn?" warn":"")
 const BANCO=window.MRC_CFG||{};
 const ONLINE=!!(BANCO.url&&BANCO.chave);
 class ErroAPI extends Error{constructor(m,c){super(m);this.cod=c;}}
-const ERROS_API={senha_curta:"A senha da equipe precisa ter pelo menos 6 caracteres.",senha_repetida:"Essa senha já é usada por outra fazenda. Escolha outra.",
+const ERROS_API={data_futura:"A data não pode ser no futuro.",data_antiga:"Data anterior a 2020: confira o ano.",animais_invalido:"Informe o número de animais (1 ou mais).",
+  sacos_invalido:"Informe quantos sacos (mais que zero).",peso_invalido:"Peso fora do normal (20 a 1500 kg).",pasto_obrigatorio:"Informe o retiro e o número do pasto.",
+  tipo_obrigatorio:"Informe o tipo de sal.",lancamento_invalido:"Lançamento com dados inválidos.",lancamento_inexistente:"Esse lançamento já tinha sido apagado.",senha_curta:"A senha da equipe precisa ter pelo menos 6 caracteres.",senha_repetida:"Essa senha já é usada por outra fazenda. Escolha outra.",
   codigo_invalido:"Código inválido: use letras minúsculas, números e hífen (ex.: mafra).",nome_obrigatorio:"Informe o nome.",senha_equipe_obrigatoria:"Informe a senha da equipe.",
   usuario_invalido_formato:"O usuário deve ser nome.sobrenome (minúsculas e números, sem acento e sem espaço).",usuario_repetido:"Esse usuário já existe.",
   senha_curta_pessoa:"A senha precisa ter pelo menos 8 caracteres.",senha_obrigatoria:"Informe a senha inicial.",ultimo_adm:"É preciso ter pelo menos um administrador ativo.",
@@ -785,6 +831,7 @@ async function rpc(fn,body){
   if(!r.ok){const m=(j&&(j.message||j.msg))||txt||("erro "+r.status);
     if(/sessao_expirada/.test(m))throw new ErroAPI("Sua sessão expirou. Entre de novo.","sessao");
     if(/sem_permissao/.test(m))throw new ErroAPI("Sem permissão para isso.","permissao");
+    if(j&&j.code==="PGRST202")throw new ErroAPI("O banco ainda não tem esta função: rode o SQL novo no Supabase (veja o LEIA-ME).","banco_antigo");
     for(const k of Object.keys(ERROS_API).sort((x,y)=>y.length-x.length))if(m.includes(k))throw new ErroAPI(ERROS_API[k],k);
     throw new ErroAPI("Erro no servidor: "+m,"servidor");}
   return j;
@@ -800,7 +847,7 @@ const IDB=(()=>{const mem={};let dbp=null;
     async limpar(){for(const k in mem)delete mem[k];try{await tx("readwrite",s=>s.clear());}catch(e){}}};})();
 
 /* ======================= ESTADO DA SESSÃO ======================= */
-let SESSAO=null,USER=null,FAZ=null,FAZS=[],ABAS=[],CFG_INFO=null;
+let SESSAO=null,USER=null,FAZ=null,FAZS=[],ABAS=[],CFG_INFO=null,LANC=[];
 function papelNome(p){return p==="adm"?"Administrador":p==="tecnico"?"Técnico":"Equipe da fazenda";}
 function aplicarPapel(){
   const ed=!ONLINE||(USER&&USER.editor);
@@ -812,10 +859,12 @@ function aplicarPapel(){
   $("#v-ajustes").classList.toggle("ro",!ed);
   $("#applyCfg").hidden=!ed;$("#addProd").hidden=!ed;$("#resetCfg").hidden=!ed;
 }
-function setDados(abas,src){
-  ABAS=abas;SRC=src;RAW=abasToRows(abas);ALL=compute(RAW);
+function setDados(abas,src,lanc){
+  if(lanc!==undefined)LANC=lanc||[];
+  ABAS=abas;SRC=src;RAW=abasToRows(abas).concat(lancToRows(lancVisiveis(),abas));ALL=compute(RAW);
   for(const k in F)F[k]="";refreshFilters();render();
   if($("#v-planilhas").classList.contains("on"))renderPlanilhas();
+  if($("#v-lancamentos").classList.contains("on"))renderLanc();
 }
 function cfgDe(dados){return Object.assign(structuredClone(DEFAULT_CFG),dados||{});}
 
@@ -829,7 +878,12 @@ $("#loginForm").addEventListener("submit",async e=>{
     $("#pwd").value="";$("#loginErr").textContent="";LS.set("sessao",r);iniciar(r);
   }catch(err){$("#loginErr").textContent=err.message;}finally{$("#btnEntrar").disabled=false;}
 });
-$("#btnSair").onclick=async()=>{const tok=SESSAO&&SESSAO.token;SESSAO=null;USER=null;LS.del("sessao");await IDB.limpar();
+$("#btnSair").onclick=async()=>{
+  const pend=FAZS.reduce((n,f)=>n+fila(f.id).length,0),b=$("#btnSair");
+  if(pend&&b.dataset.ok!=="1"){b.dataset.ok="1";b.textContent=`Sair e perder ${pend} lançamento(s) sem internet?`;toast("Há lançamentos guardados que ainda não foram enviados. Conecte-se à internet para enviá-los antes de sair.");
+    setTimeout(()=>{b.dataset.ok="";b.textContent="Sair";},6000);return;}
+  b.dataset.ok="";b.textContent="Sair";FAZS.forEach(f=>setFila([],f.id));
+  const tok=SESSAO&&SESSAO.token;SESSAO=null;USER=null;LS.del("sessao");await IDB.limpar();
   if(tok)rpc("sair",{p_token:tok}).catch(()=>{});mostrarLogin();};
 function mostrarLogin(msgTxt){$("#appRoot").hidden=true;$("#login").hidden=false;$("#loginErr").textContent=msgTxt||"";setTimeout(()=>$("#usr").focus(),50);}
 function sessaoCaiu(){LS.del("sessao");SESSAO=null;USER=null;mostrarLogin("Sua sessão expirou ou o acesso mudou. Entre de novo.");}
@@ -839,7 +893,7 @@ function iniciar(s){
   preencherFazendas(s.fazendas||[]);
   const ult=LS.get("fazenda");
   if(FAZS.length)abrirFazenda(FAZS.some(f=>f.id===ult)?ult:FAZS[0].id);
-  else{setDados([], "sem fazenda");msg(USER.admin?"Nenhuma fazenda cadastrada ainda. Cadastre a primeira na aba <b>Fazendas</b>.":"Nenhuma fazenda liberada para você. Fale com o administrador.",true);if(USER.admin)location.hash="fazendas";}
+  else{setDados([], "sem fazenda",[]);msg(USER.admin?"Nenhuma fazenda cadastrada ainda. Cadastre a primeira na aba <b>Fazendas</b>.":"Nenhuma fazenda liberada para você. Fale com o administrador.",true);if(USER.admin)location.hash="fazendas";}
   route();atualizarListaFazendas();
 }
 function preencherFazendas(lista){
@@ -858,19 +912,19 @@ $("#farmSel").onchange=e=>abrirFazenda(e.target.value);
 async function abrirFazenda(fid){
   FAZ=fid;LS.set("fazenda",fid);const nome=(FAZS.find(f=>f.id===fid)||{}).nome||fid;
   const cache=await IDB.get("faz:"+fid);
-  if(cache){CFG=cfgDe(cache.config);CFG_INFO=cache;renderCfg();setDados(cache.abas||[],nome);msg("Atualizando…");}
-  else{CFG=cfgDe(null);renderCfg();setDados([],nome);msg("Carregando as planilhas da fazenda…");}
+  if(cache){CFG=cfgDe(cache.config);CFG_INFO=cache;renderCfg();setDados(cache.abas||[],nome,cache.lancamentos||[]);msg("Atualizando…");}
+  else{CFG=cfgDe(null);renderCfg();setDados([],nome,[]);msg("Carregando as planilhas da fazenda…");}
   try{const d=await rpc("dados",{p_token:SESSAO.token,p_fazenda:fid});if(FAZ!==fid)return;
-    await IDB.set("faz:"+fid,d);CFG=cfgDe(d.config);CFG_INFO=d;renderCfg();setDados(d.abas||[],nome);mostrarSituacao();}
+    await IDB.set("faz:"+fid,d);CFG=cfgDe(d.config);CFG_INFO=d;renderCfg();setDados(d.abas||[],nome,d.lancamentos||[]);mostrarSituacao();enviarFila();}
   catch(e){if(e.cod==="sessao")return sessaoCaiu();
     msg(cache?`Sem conexão: mostrando a cópia salva neste aparelho (${new Date(cache.gerado_em).toLocaleString("pt-BR")}).`:esc(e.message),true);}
 }
 function mostrarSituacao(){
   if(ONLINE){
-    if(!ABAS.length)msg(`Nenhuma planilha salva para esta fazenda ainda. Clique em <b>Inserir planilhas</b> e selecione as "Folha Suplementação".`);
+    if(!ABAS.length)msg(`Nenhuma planilha salva para esta fazenda ainda. Na aba <b>Lançamentos</b>, use <b>Lançar planilhas</b> ou lance os tratos um a um.`);
     else{const u=ABAS.reduce((m,a)=>a.enviado_em>m.enviado_em?a:m,ABAS[0]);
       msg(`<b>${ABAS.length} planilhas salvas</b> (${f0(ALL.length)} lançamentos). Último envio: ${esc(u.retiro)} ${String(u.mes).padStart(2,"0")}/${u.ano}, por ${esc(u.enviado_por)} em ${new Date(u.enviado_em).toLocaleDateString("pt-BR")}.`);}
-  }else if(SRC==="Exemplo fictício")msg(`Mostrando dados fictícios. Clique em <b>Inserir planilhas</b> e selecione as "Folha Suplementação". Elas ficam salvas neste aparelho.`);
+  }else if(SRC==="Exemplo fictício")msg(`Mostrando dados fictícios. Na aba <b>Lançamentos</b>, clique em <b>Lançar planilhas</b> e selecione as "Folha Suplementação". Elas ficam salvas neste aparelho.`);
   else msg(`<b>${ABAS.length} planilhas salvas neste aparelho</b> (${f0(ALL.length)} lançamentos). Para compartilhar com a equipe, o administrador precisa configurar o banco (veja o LEIA-ME).`);
 }
 
@@ -898,10 +952,10 @@ async function readFiles(list){
     }catch(e){if(e.cod==="sessao")return sessaoCaiu();msg(`Envio interrompido: ${esc(e.message)} ${ins+sub?`(${ins+sub} abas já tinham sido salvas)`:""}`,true);await abrirFazenda(FAZ);return;}
     await abrirFazenda(FAZ);
   }else{
-    const atuais=new Map((SRC==="Exemplo fictício"?[]:ABAS).map(a=>[chaveAba(a),a]));
+    const atuais=new Map((SRC==="Exemplo fictício"?[]:ABAS).map(a=>[chaveAba(a),a]));if(SRC==="Exemplo fictício")LANC=[];
     for(const [nome,abas] of lidos)for(const a of abas){const k=chaveAba(a);if(atuais.has(k))sub++;else ins++;
       atuais.set(k,Object.assign({},a,{arquivo:nome,n_tratos:a.dados.linhas.reduce((s,l)=>s+l.t.length,0),enviado_por:"este aparelho",enviado_em:new Date().toISOString()}));}
-    const lista=[...atuais.values()];await IDB.set("local-abas",lista);setDados(lista,"Planilhas deste aparelho");mostrarSituacao();
+    const lista=[...atuais.values()];await IDB.set("local-abas",lista);setDados(lista,"Planilhas deste aparelho",SRC==="Exemplo fictício"?[]:LANC);mostrarSituacao();
   }
   toast(`${ins} planilha(s) nova(s), ${sub} substituída(s).`);
   if(erros.length)msg(`${$("#msg").innerHTML}<br>Algumas abas foram ignoradas: ${erros.slice(0,4).map(esc).join(" ")}${erros.length>4?` (+${erros.length-4})`:""}`,true);
@@ -909,9 +963,9 @@ async function readFiles(list){
 const inp=document.getElementById("files");
 for(const id of ["pick","pick2"])document.getElementById(id).onclick=()=>inp.click();
 inp.onchange=()=>{const lista=[...inp.files];readFiles(lista).finally(()=>{inp.value="";});};
-const drop=document.getElementById("drop");
-for(const el of [drop,document.body]){el.addEventListener("dragover",e=>{e.preventDefault();drop.classList.add("over");});el.addEventListener("dragleave",()=>drop.classList.remove("over"));
-  el.addEventListener("drop",e=>{e.preventDefault();drop.classList.remove("over");if(e.dataTransfer.files.length)readFiles(e.dataTransfer.files);});}
+const drops=[...document.querySelectorAll(".drop")];const marcar=on=>drops.forEach(d=>d.classList.toggle("over",on));
+for(const el of [...drops,document.body]){el.addEventListener("dragover",e=>{e.preventDefault();marcar(true);});el.addEventListener("dragleave",()=>marcar(false));
+  el.addEventListener("drop",e=>{e.preventDefault();marcar(false);if(e.dataTransfer.files.length)readFiles(e.dataTransfer.files);});}
 
 /* ---------- aba Planilhas ---------- */
 async function renderPlanilhas(){
@@ -937,7 +991,167 @@ function confirmarApagar(b){
 async function apagarAba(k){
   const a=ABAS.find(x=>chaveAba(x)===k);if(!a)return;
   if(ONLINE){try{await rpc("apagar_aba",{p_token:SESSAO.token,p_fazenda:FAZ,p_id:a.id});toast("Planilha apagada.");}catch(e){if(e.cod==="sessao")return sessaoCaiu();toast(e.message);}await abrirFazenda(FAZ);}
-  else{const l=ABAS.filter(x=>chaveAba(x)!==k);await IDB.set("local-abas",l);if(l.length)setDados(l,"Planilhas deste aparelho");else loadDemo();mostrarSituacao();toast("Planilha apagada deste aparelho.");}
+  else{const l=ABAS.filter(x=>chaveAba(x)!==k);await IDB.set("local-abas",l);if(l.length||LANC.length)setDados(l,"Planilhas deste aparelho");else loadDemo();mostrarSituacao();toast("Planilha apagada deste aparelho.");}
+}
+
+
+/* ======================= LANÇAMENTOS NO APP ======================= */
+// Data do dia no fuso do aparelho (não em UTC: às 22h em Brasília já seria "amanhã" em UTC).
+const diaLocal=(n=0)=>{const d=new Date();d.setDate(d.getDate()-n);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;};
+const dtS=s=>s?`${s.slice(8,10)}/${s.slice(5,7)}/${s.slice(0,4)}`:"–";
+const ymdDe=x=>String(x.data).slice(0,10);
+const chaveTrato=(ret,pasto,d)=>up(ret)+"|"+up(pasto)+"|"+d;
+// Fila de quem lançou sem internet: fica no aparelho, por fazenda, até conseguir enviar.
+const filaKey=(f=FAZ)=>"fila:"+f;
+const fila=(f=FAZ)=>(ONLINE&&f&&LS.get(filaKey(f)))||[];
+function setFila(l,f=FAZ){if(l.length)LS.set(filaKey(f),l);else LS.del(filaKey(f));}
+// Tratos que já estão em alguma planilha (retiro|pasto|dia): a planilha vale mais que o lançamento do app.
+let NA_PL={abas:null,set:null};
+function tratosDasPlanilhas(abas){if(NA_PL.abas===abas)return NA_PL.set;const st=new Set();
+  for(const a of abas)for(const l of (a.dados&&a.dados.linhas)||[])for(const [d] of l.t||[])st.add(chaveTrato(a.retiro,l.pasto,d));NA_PL={abas,set:st};return st;}
+// Lançamentos salvos + os que esperam internet (um pendente do mesmo pasto e dia substitui o salvo).
+function lancVisiveis(){const f=fila().map(x=>Object.assign({},x,{pendente:true}));const kf=new Set(f.map(x=>chaveTrato(x.retiro,x.pasto,ymdDe(x))));
+  return LANC.filter(x=>!kf.has(chaveTrato(x.retiro,x.pasto,ymdDe(x)))).concat(f);}
+function lancToRows(lanc,abas){
+  const naPl=tratosDasPlanilhas(abas),out=[];
+  for(const x of lanc){if(x.erro)continue;const d=ymdDe(x);if(naPl.has(chaveTrato(x.retiro,x.pasto,d)))continue;
+    const [y,m,dd]=d.split("-").map(Number);
+    out.push({arquivo:"Lançado no app",aba:x.autor||"app",retiro:up(x.retiro),mesNome:MESES[m-1],mesNum:m,saida:null,areaHdr:null,animProd:null,mapa:null,
+      id:"L"+(x.id??x.uid),pasto:up(x.pasto),qtd:+x.qtd,peso:x.peso==null?null:+x.peso,cat:x.cat?up(x.cat):null,tipo:up(x.tipo),area:null,
+      data:new Date(Date.UTC(y,m-1,dd)),sacos:+x.sacos,manual:true});}
+  return out;
+}
+// Último trato conhecido de cada retiro|pasto (planilhas e app), para preencher o formulário.
+function ultimosTratos(){const m=new Map();for(const r of RAW){const k=up(r.retiro)+"|"+up(r.pasto);const u=m.get(k);if(!u||r.data>u.data)m.set(k,r);}return m;}
+let ULT=new Map();
+const natural=(a,b)=>a.localeCompare(b,"pt-BR",{numeric:true});
+const retirosConhecidos=()=>[...new Set(RAW.map(r=>up(r.retiro)).filter(Boolean))].sort(natural);
+const pastosDo=ret=>[...ULT.keys()].filter(k=>k.startsWith(ret+"|")).map(k=>k.slice(ret.length+1)).sort(natural);
+function retiroEscolhido(){const v=$("#lcRet").value;return up(v==="__novo"?$("#lcRetNovo").value:v)||"";}
+// "1" encontra o pasto "01" já existente no retiro (e vice-versa), para não criar pasto duplicado.
+function resolverPasto(ret,txt){const t=up(txt)||"";if(!t)return "";const ps=pastosDo(ret);if(ps.includes(t))return t;
+  const z=x=>x.replace(/^0+(?=.)/,"");return ps.find(p=>z(p)===z(t))||t;}
+const pesoSacoDe=tipo=>{const p=produtoDe(up(tipo)||"");return p?p.saco:((up(tipo)||"").includes("MUB")?50:30);};
+const fS=v=>v==null||isNaN(v)?"–":Number.isInteger(+v)?f0(+v):f1(+v);
+const opts=(l)=>l.map(v=>`<option value="${esc(v)}"></option>`).join("");
+
+function renderLanc(){
+  ULT=ultimosTratos();
+  const rets=retirosConhecidos(),sel=$("#lcRet"),atual=sel.value||LS.get("lanc-ret");
+  sel.innerHTML=rets.map(r=>`<option value="${esc(r)}">${esc(r)}</option>`).join("")+`<option value="__novo">Outro retiro…</option>`;
+  const digitado=atual==="__novo"&&$("#lcRetNovo").value.trim();   // "Outro retiro" só fica se a pessoa digitou um nome
+  sel.value=rets.includes(atual)?atual:digitado?"__novo":(rets[0]||"__novo");
+  $("#lcRetNovo").hidden=sel.value!=="__novo";
+  $("#lcTipos").innerHTML=opts([...new Set([...RAW.map(r=>r.tipo).filter(Boolean),...CFG.produtos.map(p=>p.chave).filter(Boolean)])].sort(natural));
+  $("#lcCats").innerHTML=opts([...new Set(RAW.map(r=>r.cat).filter(Boolean))].sort(natural));
+  const hoje=diaLocal(),d=$("#lcData");d.max=hoje;d.min="2020-01-01";if(!d.value||d.value>hoje)d.value=hoje;
+  atualizarPastos();resumoLanc();renderLancLista();
+}
+function atualizarPastos(){$("#lcPastos").innerHTML=opts(pastosDo(retiroEscolhido()));}
+function preencherDoUltimo(){
+  const ret=retiroEscolhido(),pasto=resolverPasto(ret,$("#lcPasto").value),u=pasto&&ULT.get(ret+"|"+pasto);
+  if(!pasto){$("#lcUlt").textContent="";return;}
+  if(!u){$("#lcUlt").innerHTML=`<b>Pasto novo</b> neste retiro: preencha animais e tipo de sal.`;return;}
+  $("#lcQtd").value=u.qtd||"";$("#lcTipo").value=u.tipo||"";$("#lcPeso").value=u.peso||"";$("#lcCat").value=u.cat||"";
+  $("#lcUlt").innerHTML=`Último trato: <b>${dt(u.data)}</b> · ${f0(u.qtd)} animais · ${esc(u.tipo||"sem tipo")} · ${fS(u.sacos)} saco(s)${u.peso?` · ${f0(u.peso)} kg`:""}${u.cat?` · ${esc(u.cat)}`:""}${u.manual?" (lançado no app)":""}`;
+}
+function lerLanc(){const ret=retiroEscolhido();
+  return {retiro:ret,pasto:resolverPasto(ret,$("#lcPasto").value),data:$("#lcData").value,qtd:toNum($("#lcQtd").value),tipo:up($("#lcTipo").value)||"",
+    sacos:toNum($("#lcSacos").value),peso:toNum($("#lcPeso").value),cat:up($("#lcCat").value)};}
+function problemaLanc(l){
+  if(!l.retiro)return "Escolha o retiro.";if(!l.pasto)return "Informe o número do pasto.";
+  if(!(l.qtd>=1)||!Number.isInteger(l.qtd))return "Informe o número de animais (número inteiro, 1 ou mais).";
+  if(!l.tipo)return "Informe o tipo de sal.";if(!(l.sacos>0))return "Informe quantos sacos foram fornecidos.";
+  if(!l.data)return "Informe a data.";if(l.data>diaLocal())return "A data não pode ser no futuro.";if(l.data<"2020-01-01")return "Data anterior a 2020: confira o ano.";
+  if(l.peso!=null&&(l.peso<20||l.peso>1500))return "Peso fora do normal (20 a 1500 kg).";return null;}
+function resumoLanc(){const l=lerLanc();
+  if(!l.pasto||!(l.sacos>0)){$("#lcResumo").innerHTML="";return;}
+  const kg=l.sacos*pesoSacoDe(l.tipo),ja=LANC.concat(fila()).some(x=>chaveTrato(x.retiro,x.pasto,ymdDe(x))===chaveTrato(l.retiro,l.pasto,l.data));
+  $("#lcResumo").innerHTML=`<b>${esc(l.retiro)} · Pasto ${esc(l.pasto)}</b><br>${l.qtd?f0(l.qtd):"?"} animais · ${esc(l.tipo||"?")}<br>${fS(l.sacos)} saco(s) = <b>${f0(kg)} kg</b> · ${l.data?dtS(l.data):"?"}${l.data===diaLocal()?" (hoje)":""}`+
+    (ja?`<br><span class="pill p-low">Já há lançamento deste pasto neste dia: vai corrigir</span>`:"");
+}
+$("#lcRet").onchange=()=>{$("#lcRetNovo").hidden=$("#lcRet").value!=="__novo";if($("#lcRet").value!=="__novo")LS.set("lanc-ret",$("#lcRet").value);atualizarPastos();preencherDoUltimo();resumoLanc();};
+$("#lcPasto").addEventListener("change",()=>{preencherDoUltimo();resumoLanc();});
+$("#lcPasto").addEventListener("input",()=>{if(ULT.has(retiroEscolhido()+"|"+resolverPasto(retiroEscolhido(),$("#lcPasto").value)))preencherDoUltimo();resumoLanc();});
+for(const id of ["lcRetNovo","lcQtd","lcTipo","lcSacos","lcPeso","lcCat"])$("#"+id).addEventListener("input",resumoLanc);
+$("#lcData").addEventListener("change",()=>{const d=$("#lcData"),h=diaLocal();if(d.value>h){d.value=h;$("#lcMsg").textContent="A data não pode ser no futuro: voltei para hoje.";}else if(/futuro/.test($("#lcMsg").textContent))$("#lcMsg").textContent="";resumoLanc();});
+document.querySelectorAll("#lcForm [data-dia]").forEach(b=>b.onclick=()=>{$("#lcData").value=diaLocal(+b.dataset.dia);resumoLanc();});
+
+// Consumo do trato anterior do mesmo pasto, que este lançamento acabou de fechar.
+function consumoFechado(l){const t=Date.UTC(...l.data.split("-").map((v,i)=>i===1?v-1:+v));
+  const r=ALL.find(x=>up(x.retiro)===l.retiro&&up(x.pasto)===l.pasto&&x.prox&&x.prox.getTime()===t);
+  if(!r)return "";if(r.cons==null)return ` Trato anterior (${dt(r.data)}): ${esc(r.stInt)}.`;
+  return ` Consumo do trato anterior (${dt(r.data)} → ${dtS(l.data)}, ${r.dias} dia(s)): <b>${f3(r.cons)} kg/cab/dia</b> ${pill(r.status)}`;}
+
+$("#lcForm").addEventListener("submit",async e=>{e.preventDefault();
+  const l=lerLanc(),prob=problemaLanc(l);if(prob){$("#lcMsg").textContent=prob;return;}
+  if(ONLINE&&!FAZ){$("#lcMsg").textContent="Escolha uma fazenda antes.";return;}
+  const k=chaveTrato(l.retiro,l.pasto,l.data),autor=ONLINE?(USER&&(USER.nome||papelNome(USER.papel)))||"":"este aparelho";
+  const btn=$("#lcBtn");btn.disabled=true;$("#lcMsg").textContent="Lançando…";let txt;
+  try{
+    if(ONLINE){
+      try{const r=await rpc("lancar",{p_token:SESSAO.token,p_fazenda:FAZ,p_lanc:l});
+        LANC=LANC.filter(x=>chaveTrato(x.retiro,x.pasto,ymdDe(x))!==k).concat([Object.assign({},l,{id:r.id,autor,criado_em:new Date().toISOString()})]);
+        setFila(fila().filter(x=>chaveTrato(x.retiro,x.pasto,ymdDe(x))!==k));
+        const c=await IDB.get("faz:"+FAZ);if(c){c.lancamentos=LANC;await IDB.set("faz:"+FAZ,c);}
+        txt=r.substituiu?"Corrigido.":"Lançado.";}
+      catch(err){if(err.cod==="sessao")return sessaoCaiu();if(err.cod!=="offline")throw err;
+        setFila(fila().filter(x=>chaveTrato(x.retiro,x.pasto,ymdDe(x))!==k).concat([Object.assign({},l,{uid:"p"+Date.now(),autor,criado_em:new Date().toISOString()})]));
+        txt="Sem internet: guardado neste aparelho. Será enviado sozinho quando a conexão voltar.";}
+      setDados(ABAS,SRC);
+    }else{
+      const base=SRC==="Exemplo fictício"?[]:ABAS;if(SRC==="Exemplo fictício")LANC=[];
+      LANC=LANC.filter(x=>chaveTrato(x.retiro,x.pasto,ymdDe(x))!==k).concat([Object.assign({},l,{uid:"l"+Date.now(),autor,criado_em:new Date().toISOString()})]);
+      await IDB.set("local-lanc",LANC);setDados(base,"Planilhas deste aparelho");txt="Lançado neste aparelho.";}
+    if(l.retiro!==$("#lcRet").value){LS.set("lanc-ret",l.retiro);renderLanc();}
+    $("#lcMsg").innerHTML=esc(txt)+consumoFechado(l);toast(txt);
+    for(const id of ["lcPasto","lcQtd","lcSacos","lcPeso","lcCat"])$("#"+id).value="";
+    $("#lcUlt").textContent="";resumoLanc();$("#lcPasto").focus();
+  }catch(err){$("#lcMsg").textContent=err.message;}
+  finally{btn.disabled=false;}
+});
+
+async function enviarFila(){
+  if(!ONLINE||!SESSAO||!FAZ||enviarFila.rodando)return;const f=fila(),faz=FAZ;if(!f.length)return;
+  enviarFila.rodando=true;let n=0;const resto=[];
+  try{for(let i=0;i<f.length;i++){const x=f[i];if(x.erro){resto.push(x);continue;}
+      const {uid,autor,criado_em,erro,pendente,...lanc}=x;
+      try{await rpc("lancar",{p_token:SESSAO.token,p_fazenda:faz,p_lanc:lanc});n++;}
+      catch(e){if(e.cod==="offline"||e.cod==="sessao"){resto.push(...f.slice(i));if(e.cod==="sessao"){setFila(resto,faz);return sessaoCaiu();}break;}
+        resto.push(Object.assign({},x,{erro:e.message}));}}
+    setFila(resto,faz);
+  }finally{enviarFila.rodando=false;}
+  if(n){toast(`${n} lançamento(s) guardado(s) no aparelho foram enviados.`);if(FAZ===faz)await abrirFazenda(faz);}
+  else if($("#v-lancamentos").classList.contains("on"))renderLancLista();
+}
+addEventListener("online",enviarFila);
+
+function renderLancLista(){
+  const naPl=tratosDasPlanilhas(ABAS),podeApagar=!ONLINE||(USER&&USER.editor);
+  const l=lancVisiveis().sort((a,b)=>ymdDe(b).localeCompare(ymdDe(a))||String(b.criado_em||"").localeCompare(String(a.criado_em||"")));
+  const pend=l.filter(x=>x.pendente&&!x.erro).length,rec=l.filter(x=>x.erro).length;
+  $("#lcFila").hidden=!(pend||rec);
+  $("#lcFila").innerHTML=(pend?`<b>${pend} lançamento(s) esperando internet</b> neste aparelho. Eles já aparecem nas contas e serão enviados sozinhos quando a conexão voltar. `:"")+
+    (rec?`<b>${rec} lançamento(s) recusado(s) pelo banco</b>: veja o motivo abaixo, corrija lançando de novo e descarte o recusado.`:"");
+  $("#lcConta").textContent=l.length?`${f0(l.length)} lançamento(s)${l.length>200?" · mostrando os 200 mais recentes":""}`:"";
+  const sit=x=>x.erro?`<span class="pill p-high">Recusado</span><br><span class="small">${esc(x.erro)}</span>`:x.pendente?`<span class="pill p-low">Esperando internet</span>`
+    :naPl.has(chaveTrato(x.retiro,x.pasto,ymdDe(x)))?`<span class="pill p-none">Já está na planilha</span>`:`<span class="pill p-ok">Na conta</span>`;
+  const acao=x=>x.pendente?`<button class="btn" data-descartar="${esc(x.uid)}">Descartar</button>`:podeApagar?`<button class="btn" data-apagarl="${esc(String(x.id??x.uid))}">Apagar</button>`:"";
+  $("#lcLista").innerHTML=l.length?table([{t:"Data",f:x=>dtS(ymdDe(x))},{t:"Retiro",f:x=>esc(x.retiro)},{t:"Pasto",f:x=>`<b>${esc(x.pasto)}</b>`},{t:"Animais",n:1,f:x=>f0(+x.qtd)},
+      {t:"Tipo de sal",f:x=>esc(x.tipo)},{t:"Sacos",n:1,f:x=>fS(+x.sacos)},{t:"Lançado por",f:x=>esc(x.autor||"–")},{t:"Situação",f:sit},{t:"",f:acao}],l.slice(0,200))
+    :`<div class="empty">Nenhum trato lançado pelo app ainda.</div>`;
+  document.querySelectorAll("[data-descartar]").forEach(b=>b.onclick=()=>confirmar(b,"Descartar",()=>{setFila(fila().filter(x=>x.uid!==b.dataset.descartar));setDados(ABAS,SRC);toast("Lançamento descartado.");}));
+  document.querySelectorAll("[data-apagarl]").forEach(b=>b.onclick=()=>confirmar(b,"Apagar",()=>apagarLanc(b.dataset.apagarl)));
+}
+function confirmar(b,rot,fn){
+  if(b.dataset.ok!=="1"){b.dataset.ok="1";b.textContent="Confirmar";b.classList.add("primary");setTimeout(()=>{if(b.isConnected){b.dataset.ok="";b.textContent=rot;b.classList.remove("primary");}},4000);return;}
+  fn();}
+async function apagarLanc(idTxt){
+  const x=LANC.find(v=>String(v.id??v.uid)===idTxt);if(!x)return;
+  if(ONLINE){try{await rpc("apagar_lancamento",{p_token:SESSAO.token,p_fazenda:FAZ,p_id:+x.id});toast("Lançamento apagado.");}
+    catch(e){if(e.cod==="sessao")return sessaoCaiu();if(e.cod!=="lancamento_inexistente"){toast(e.message);return;}}
+    LANC=LANC.filter(v=>v!==x);const c=await IDB.get("faz:"+FAZ);if(c){c.lancamentos=LANC;await IDB.set("faz:"+FAZ,c);}setDados(ABAS,SRC);}
+  else{LANC=LANC.filter(v=>v!==x);await IDB.set("local-lanc",LANC);if(ABAS.length||LANC.length)setDados(ABAS,SRC);else loadDemo();toast("Lançamento apagado deste aparelho.");}
 }
 
 /* ======================= EXPORTAR ======================= */
@@ -1071,7 +1285,7 @@ function demoWorkbooks(){
   }
   return books;
 }
-function loadDemo(){let abas=[];for(const [n,wb] of demoWorkbooks()){const buf=XLSX.write(wb,{type:"array",bookType:"xlsx"});abas.push(...parseWorkbook(XLSX.read(buf,{type:"array",cellDates:false}),n).abas);}setDados(abas,"Exemplo fictício");mostrarSituacao();}
+function loadDemo(){let abas=[];for(const [n,wb] of demoWorkbooks()){const buf=XLSX.write(wb,{type:"array",bookType:"xlsx"});abas.push(...parseWorkbook(XLSX.read(buf,{type:"array",cellDates:false}),n).abas);}setDados(abas,"Exemplo fictício",[]);mostrarSituacao();}
 document.getElementById("demo").onclick=loadDemo;
 
 /* ======================= INÍCIO ======================= */
@@ -1080,8 +1294,8 @@ document.getElementById("demo").onclick=loadDemo;
   if(ONLINE){const s=LS.get("sessao");if(s&&s.token)iniciar(s);else mostrarLogin();return;}
   // sem banco: modo local. As planilhas inseridas ficam salvas neste aparelho.
   aplicarPapel();renderCfg();route();
-  const loc=await IDB.get("local-abas");
-  if(loc&&loc.length){setDados(loc,"Planilhas deste aparelho");mostrarSituacao();}else if(typeof XLSX!=="undefined")loadDemo();
+  const loc=await IDB.get("local-abas"),locL=await IDB.get("local-lanc");
+  if((loc&&loc.length)||(locL&&locL.length)){setDados(loc||[],"Planilhas deste aparelho",locL||[]);mostrarSituacao();}else if(typeof XLSX!=="undefined")loadDemo();
 })();
 // funcionamento sem internet (só no endereço próprio do app; a prévia do Claude não permite)
 if("serviceWorker" in navigator&&(location.protocol==="https:"||location.hostname==="localhost")){try{navigator.serviceWorker.register("sw.js").catch(()=>{});}catch(e){}}

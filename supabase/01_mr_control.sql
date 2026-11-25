@@ -88,9 +88,25 @@ create table if not exists public.registro (
   detalhe    text
 );
 create index if not exists registro_faz on public.registro(fazenda_id, quando desc);
+-- lançamentos feitos direto no app (um trato: retiro + pasto + data). Lançar de novo o mesmo pasto e dia corrige.
+create table if not exists public.lancamentos (
+  id         bigserial primary key,
+  fazenda_id text not null references public.fazendas(id) on delete cascade,
+  retiro     text not null,
+  pasto      text not null,
+  data       date not null,
+  qtd        int  not null check (qtd between 1 and 100000),
+  tipo       text not null,
+  sacos      numeric(8,2) not null check (sacos > 0 and sacos <= 2000),
+  peso       numeric(7,1) check (peso is null or peso between 20 and 1500),
+  cat        text,
+  autor      text not null,
+  criado_em  timestamptz not null default now(),
+  unique (fazenda_id, retiro, pasto, data)
+);
 
 do $$ declare t text; begin
-  foreach t in array array['fazendas','pessoas','pessoa_fazendas','sessoes','login_falhas','abas','config','config_hist','registro'] loop
+  foreach t in array array['fazendas','pessoas','pessoa_fazendas','sessoes','login_falhas','abas','config','config_hist','registro','lancamentos'] loop
     execute format('alter table public.%I enable row level security', t);
     execute format('revoke all on public.%I from anon, authenticated', t);
   end loop;
@@ -239,6 +255,10 @@ begin
                                                           'aba', a.aba, 'n_tratos', a.n_tratos, 'enviado_por', a.enviado_por,
                                                           'enviado_em', a.enviado_em, 'dados', a.dados) order by a.ano, a.mes, a.retiro), '[]')
              from public.abas a where a.fazenda_id = p_fazenda),
+    'lancamentos', (select coalesce(jsonb_agg(jsonb_build_object('id', l.id, 'retiro', l.retiro, 'pasto', l.pasto, 'data', l.data, 'qtd', l.qtd,
+                                                                 'tipo', l.tipo, 'sacos', l.sacos, 'peso', l.peso, 'cat', l.cat, 'autor', l.autor,
+                                                                 'criado_em', l.criado_em) order by l.data, l.retiro, l.pasto), '[]')
+                    from public.lancamentos l where l.fazenda_id = p_fazenda),
     'config', (select dados from public.config where fazenda_id = p_fazenda),
     'config_atualizado_em', (select atualizado_em from public.config where fazenda_id = p_fazenda),
     'config_atualizado_por', (select atualizado_por from public.config where fazenda_id = p_fazenda)
@@ -286,6 +306,56 @@ begin
   delete from public.abas where id = p_id and fazenda_id = p_fazenda returning * into a;
   if a.id is null then raise exception 'aba_inexistente' using errcode = 'P0001'; end if;
   perform public._registrar(p_fazenda, public._autor(s), 'apagou', a.retiro || ' ' || lpad(a.mes::text, 2, '0') || '/' || a.ano || ' (' || a.arquivo || ')');
+end $$;
+
+-- Lançar um trato pelo app: administrador, técnico e equipe da fazenda (como no envio de planilhas).
+-- Data só de hoje para trás (horário de Brasília). O mesmo retiro + pasto + dia substitui o anterior.
+create or replace function public.lancar(p_token text, p_fazenda text, p_lanc jsonb)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare s public.sessoes; autor text; v_ret text; v_pasto text; v_tipo text; v_cat text; v_data date; v_qtd int; v_sacos numeric; v_peso numeric;
+        hoje date := (now() at time zone 'America/Sao_Paulo')::date; existia boolean; v_id bigint;
+begin
+  s := public._exige(p_token, array['adm', 'tecnico', 'leitor'], p_fazenda);
+  if jsonb_typeof(p_lanc) <> 'object' or length(p_lanc::text) > 2000 then raise exception 'lancamento_invalido' using errcode = 'P0001'; end if;
+  v_ret   := upper(trim(coalesce(p_lanc->>'retiro', '')));
+  v_pasto := upper(trim(coalesce(p_lanc->>'pasto', '')));
+  v_tipo  := upper(trim(coalesce(p_lanc->>'tipo', '')));
+  v_cat   := nullif(upper(trim(coalesce(p_lanc->>'cat', ''))), '');
+  if v_ret = '' or length(v_ret) > 80 or v_pasto = '' or length(v_pasto) > 40 then raise exception 'pasto_obrigatorio' using errcode = 'P0001'; end if;
+  if v_tipo = '' or length(v_tipo) > 80 then raise exception 'tipo_obrigatorio' using errcode = 'P0001'; end if;
+  begin
+    v_data := (p_lanc->>'data')::date; v_qtd := (p_lanc->>'qtd')::int; v_sacos := (p_lanc->>'sacos')::numeric; v_peso := nullif(p_lanc->>'peso', '')::numeric;
+  exception when others then raise exception 'lancamento_invalido' using errcode = 'P0001'; end;
+  if v_data is null or v_data > hoje then raise exception 'data_futura' using errcode = 'P0001'; end if;
+  if v_data < date '2020-01-01' then raise exception 'data_antiga' using errcode = 'P0001'; end if;
+  if v_qtd is null or v_qtd < 1 or v_qtd > 100000 then raise exception 'animais_invalido' using errcode = 'P0001'; end if;
+  if v_sacos is null or v_sacos <= 0 or v_sacos > 2000 then raise exception 'sacos_invalido' using errcode = 'P0001'; end if;
+  if v_peso is not null and (v_peso < 20 or v_peso > 1500) then raise exception 'peso_invalido' using errcode = 'P0001'; end if;
+  if (select count(*) from public.registro where fazenda_id = p_fazenda and acao = 'lançou' and quando > now() - interval '1 day') >= 1500 then
+    raise exception 'limite_envios' using errcode = 'P0001'; end if;
+  if (select count(*) from public.lancamentos where fazenda_id = p_fazenda) >= 100000 then raise exception 'limite_abas' using errcode = 'P0001'; end if;
+  autor := public._autor(s);
+  select true into existia from public.lancamentos where fazenda_id = p_fazenda and retiro = v_ret and pasto = v_pasto and data = v_data;
+  insert into public.lancamentos(fazenda_id, retiro, pasto, data, qtd, tipo, sacos, peso, cat, autor)
+  values (p_fazenda, v_ret, v_pasto, v_data, v_qtd, v_tipo, v_sacos, v_peso, left(v_cat, 80), autor)
+  on conflict (fazenda_id, retiro, pasto, data) do update
+    set qtd = excluded.qtd, tipo = excluded.tipo, sacos = excluded.sacos, peso = excluded.peso, cat = excluded.cat,
+        autor = excluded.autor, criado_em = now()
+  returning id into v_id;
+  perform public._registrar(p_fazenda, autor, 'lançou', v_ret || ' pasto ' || v_pasto || ' ' || to_char(v_data, 'DD/MM/YYYY') || ': '
+                                    || v_sacos || ' saco(s) ' || v_tipo || ', ' || v_qtd || ' cab.' || case when existia then ' (corrigiu)' else '' end);
+  return jsonb_build_object('id', v_id, 'substituiu', coalesce(existia, false));
+end $$;
+
+-- Apagar um lançamento: administrador e técnico.
+create or replace function public.apagar_lancamento(p_token text, p_fazenda text, p_id bigint)
+returns void language plpgsql security definer set search_path = public as $$
+declare s public.sessoes; l public.lancamentos;
+begin
+  s := public._exige(p_token, array['adm', 'tecnico'], p_fazenda);
+  delete from public.lancamentos where id = p_id and fazenda_id = p_fazenda returning * into l;
+  if l.id is null then raise exception 'lancamento_inexistente' using errcode = 'P0001'; end if;
+  perform public._registrar(p_fazenda, public._autor(s), 'apagou lançamento', l.retiro || ' pasto ' || l.pasto || ' ' || to_char(l.data, 'DD/MM/YYYY'));
 end $$;
 
 create or replace function public.registro_fazenda(p_token text, p_fazenda text)
@@ -455,6 +525,7 @@ grant execute on function
   public.entrar(text), public.entrar_usuario(text, text), public.sair(text), public.minhas_fazendas(text),
   public.trocar_senha(text, text, text), public.dados(text, text), public.enviar_abas(text, text, text, jsonb),
   public.apagar_aba(text, text, bigint), public.registro_fazenda(text, text),
+  public.lancar(text, text, jsonb), public.apagar_lancamento(text, text, bigint),
   public.salvar_config(text, text, jsonb), public.historico_config(text, text), public.restaurar_config(text, text, bigint),
   public.adm_listar_fazendas(text), public.adm_salvar_fazenda(text, text, text, text, boolean),
   public.adm_listar_pessoas(text), public.adm_salvar_pessoa(text, int, text, text, text, text, boolean, text[]),

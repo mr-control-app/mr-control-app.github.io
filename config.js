@@ -2,6 +2,6 @@
 // Use a chave "publishable" (sb_publishable_...) ou "anon". NUNCA coloque aqui a chave "secret"/"service_role".
 // Enquanto estiver vazio, o app funciona em modo local: as planilhas ficam salvas só no aparelho.
 window.MRC_CFG = {
-  url: "",
-  chave: ""
+  url: "https://rwqferulhhugsfmxijss.supabase.co/rest/v1",
+  chave: "sb_publishable__3Hm8nHcA9bQpnUAXTEc3w_JjXZ301T"
 };

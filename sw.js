@@ -1,7 +1,7 @@
 // Mr. Control – funcionamento sem internet.
 // Guarda só os arquivos do próprio app (página, ícones e o leitor de Excel). Os dados das fazendas ficam
 // no IndexedDB do app e as chamadas ao banco (POST) nunca passam por aqui.
-const CACHE = "mrcontrol-v1";
+const CACHE = "mrcontrol-v2";
 const ARQUIVOS = ["./", "index.html", "config.js", "manifest.webmanifest", "favicon.png", "icone-192.png", "icone-512.png", "apple-touch-icon.png",
   "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"];
 

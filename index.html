@@ -309,7 +309,6 @@ details.mes{border-bottom:1px solid var(--line);padding:6px 0}details.mes summar
         <form class="form" id="peForm">
           <div class="field"><label for="peNome">Nome</label><input id="peNome" required></div>
           <div class="field"><label for="peUsr">Usuário (nome.sobrenome)</label><input id="peUsr" autocapitalize="none" spellcheck="false" placeholder="joao.silva" required></div>
-          <div class="field"><label for="peEmail">E-mail (opcional; administradores com e-mail recebem o backup semanal)</label><input id="peEmail" type="email" autocapitalize="none" spellcheck="false" placeholder="nome@exemplo.com"></div>
           <div class="field"><label for="peSenha">Senha (8+ caracteres)</label><input id="peSenha" type="text" autocomplete="off"></div>
           <div class="field"><label for="pePapel">Papel</label><select id="pePapel"><option value="tecnico">Técnico: só as fazendas marcadas</option><option value="adm">Administrador: todas as fazendas e cadastros</option></select></div>
           <div id="peFzBox"><div class="small" style="margin-bottom:4px">Fazendas liberadas</div><div class="chk" id="peFz"></div></div>
@@ -774,7 +773,7 @@ class ErroAPI extends Error{constructor(m,c){super(m);this.cod=c;}}
 const ERROS_API={senha_curta:"A senha da equipe precisa ter pelo menos 6 caracteres.",senha_repetida:"Essa senha já é usada por outra fazenda. Escolha outra.",
   codigo_invalido:"Código inválido: use letras minúsculas, números e hífen (ex.: mafra).",nome_obrigatorio:"Informe o nome.",senha_equipe_obrigatoria:"Informe a senha da equipe.",
   usuario_invalido_formato:"O usuário deve ser nome.sobrenome (minúsculas e números, sem acento e sem espaço).",usuario_repetido:"Esse usuário já existe.",
-  email_invalido:"E-mail inválido.",senha_curta_pessoa:"A senha precisa ter pelo menos 8 caracteres.",senha_obrigatoria:"Informe a senha inicial.",ultimo_adm:"É preciso ter pelo menos um administrador ativo.",
+  senha_curta_pessoa:"A senha precisa ter pelo menos 8 caracteres.",senha_obrigatoria:"Informe a senha inicial.",ultimo_adm:"É preciso ter pelo menos um administrador ativo.",
   senha_atual_errada:"A senha atual não confere.",limite_envios:"Limite de envios do dia atingido para esta fazenda. Tente amanhã.",limite_abas:"Limite de planilhas guardadas atingido. Apague meses antigos.",
   envio_grande:"Arquivo grande demais para um envio.",aba_invalida:"Uma das abas não está no formato esperado.",aba_inexistente:"Essa planilha já tinha sido apagada.",versao_inexistente:"Versão não encontrada."};
 async function rpc(fn,body){
@@ -786,7 +785,6 @@ async function rpc(fn,body){
   if(!r.ok){const m=(j&&(j.message||j.msg))||txt||("erro "+r.status);
     if(/sessao_expirada/.test(m))throw new ErroAPI("Sua sessão expirou. Entre de novo.","sessao");
     if(/sem_permissao/.test(m))throw new ErroAPI("Sem permissão para isso.","permissao");
-    if(j&&j.code==="PGRST202")throw new ErroAPI("Função do banco desatualizada: rode o SQL novo no Supabase.","banco_antigo");
     for(const k of Object.keys(ERROS_API).sort((x,y)=>y.length-x.length))if(m.includes(k))throw new ErroAPI(ERROS_API[k],k);
     throw new ErroAPI("Erro no servidor: "+m,"servidor");}
   return j;
@@ -1018,7 +1016,7 @@ async function carregarPessoas(){
   try{[PE_ADM,FZ_ADM]=await Promise.all([rpc("adm_listar_pessoas",{p_token:SESSAO.token}),rpc("adm_listar_fazendas",{p_token:SESSAO.token})]);}
   catch(e){if(e.cod==="sessao")return sessaoCaiu();$("#peLista").innerHTML=`<div class="empty">${esc(e.message)}</div>`;return;}
   const nomeFz=id=>(FZ_ADM.find(f=>f.id===id)||{}).nome||id;
-  $("#peLista").innerHTML=table([{t:"Pessoa",f:p=>`<b>${esc(p.nome)}</b><br><span class="small">${esc(p.usuario)}${p.email?"<br>"+esc(p.email):""}</span>`},{t:"Papel",f:p=>papelNome(p.papel)},
+  $("#peLista").innerHTML=table([{t:"Pessoa",f:p=>`<b>${esc(p.nome)}</b><br><span class="small">${esc(p.usuario)}</span>`},{t:"Papel",f:p=>papelNome(p.papel)},
     {t:"Fazendas",f:p=>p.papel==="adm"?"todas":esc(p.fazendas.map(nomeFz).join(", ")||"nenhuma")},{t:"Situação",f:p=>p.ativa?'<span class="pill p-ok">Ativa</span>':'<span class="pill p-none">Desativada</span>'},
     {t:"",f:p=>`<button class="btn" data-pe="${p.id}">Editar</button>`}],PE_ADM);
   document.querySelectorAll("[data-pe]").forEach(b=>b.onclick=()=>editarPessoa(PE_ADM.find(p=>p.id===+b.dataset.pe)));
@@ -1026,7 +1024,7 @@ async function carregarPessoas(){
 }
 let PE_EDIT=null;
 function editarPessoa(p){
-  PE_EDIT=p||null;$("#peTit").textContent=p?`Editar: ${p.nome}`:"Nova pessoa";$("#peNome").value=p?p.nome:"";$("#peUsr").value=p?p.usuario:"";$("#peEmail").value=p&&p.email||"";$("#peSenha").value="";
+  PE_EDIT=p||null;$("#peTit").textContent=p?`Editar: ${p.nome}`:"Nova pessoa";$("#peNome").value=p?p.nome:"";$("#peUsr").value=p?p.usuario:"";$("#peSenha").value="";
   $("#peSenha").placeholder=p?"deixe em branco para manter a atual":"";$("#pePapel").value=p?p.papel:"tecnico";$("#peAtiva").checked=p?p.ativa:true;$("#peMsg").textContent="";
   $("#peFz").innerHTML=FZ_ADM.map(f=>`<label><input type="checkbox" value="${esc(f.id)}"${p&&p.fazendas.includes(f.id)?" checked":""}> ${esc(f.nome)}</label>`).join("")||'<span class="small">Cadastre fazendas primeiro.</span>';
   $("#peFzBox").hidden=$("#pePapel").value!=="tecnico";
@@ -1035,12 +1033,9 @@ $("#pePapel").onchange=()=>{$("#peFzBox").hidden=$("#pePapel").value!=="tecnico"
 $("#peNova").onclick=()=>editarPessoa(null);
 $("#peForm").addEventListener("submit",async e=>{e.preventDefault();$("#peMsg").textContent="Salvando…";
   const fz=[...document.querySelectorAll("#peFz input:checked")].map(i=>i.value);
-  const corpo={p_token:SESSAO.token,p_id:PE_EDIT?PE_EDIT.id:null,p_nome:$("#peNome").value,p_usuario:$("#peUsr").value.trim().toLowerCase(),
-      p_senha:$("#peSenha").value||null,p_papel:$("#pePapel").value,p_ativa:$("#peAtiva").checked,p_fazendas:fz,p_email:$("#peEmail").value.trim()||null};
-  try{let id,aviso="";
-    try{id=await rpc("adm_salvar_pessoa",corpo);}
-    catch(e1){if(e1.cod!=="banco_antigo")throw e1;delete corpo.p_email;id=await rpc("adm_salvar_pessoa",corpo);aviso=" (e-mail não gravado: rode o SQL novo no Supabase)";}
-    PE_EDIT={id};await carregarPessoas();$("#peMsg").textContent="Salvo."+aviso;}
+  try{const id=await rpc("adm_salvar_pessoa",{p_token:SESSAO.token,p_id:PE_EDIT?PE_EDIT.id:null,p_nome:$("#peNome").value,p_usuario:$("#peUsr").value.trim().toLowerCase(),
+      p_senha:$("#peSenha").value||null,p_papel:$("#pePapel").value,p_ativa:$("#peAtiva").checked,p_fazendas:fz});
+    PE_EDIT={id};await carregarPessoas();$("#peMsg").textContent="Salvo.";}
   catch(err){if(err.cod==="sessao")return sessaoCaiu();$("#peMsg").textContent=err.message;}});
 /* ---------- minha senha ---------- */
 $("#btnSenha").onclick=()=>{$("#mdSenha").hidden=false;$("#sMsg").textContent="";$("#sAtual").value="";$("#sNova").value="";$("#sAtual").focus();};

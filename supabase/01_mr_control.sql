@@ -30,13 +30,6 @@ create table if not exists public.pessoas (
   ativa      boolean not null default true,
   criado_em  timestamptz not null default now()
 );
--- e-mail (opcional): administradores com e-mail recebem o backup semanal
-alter table public.pessoas add column if not exists email text;
-do $$ begin
-  if not exists (select 1 from pg_constraint where conname = 'pessoas_email_formato') then
-    alter table public.pessoas add constraint pessoas_email_formato check (email is null or email ~ '^[^@\s]+@[^@\s]+\.[^@\s]+$');
-  end if;
-end $$;
 create table if not exists public.pessoa_fazendas (
   pessoa_id  int  not null references public.pessoas(id) on delete cascade,
   fazenda_id text not null references public.fazendas(id) on delete cascade,
@@ -297,13 +290,10 @@ end $$;
 
 create or replace function public.registro_fazenda(p_token text, p_fazenda text)
 returns jsonb language plpgsql security definer set search_path = public as $$
-declare s public.sessoes; adm boolean;
 begin
-  s := public._exige(p_token, array['adm', 'tecnico'], p_fazenda);
-  adm := public._papel(s) = 'adm';
+  perform public._exige(p_token, array['adm', 'tecnico'], p_fazenda);
   return (select coalesce(jsonb_agg(jsonb_build_object('quando', quando, 'autor', autor, 'acao', acao, 'detalhe', detalhe) order by quando desc), '[]')
-          from (select * from public.registro where fazenda_id = p_fazenda or (adm and acao = 'backup enviado')
-                order by quando desc limit 200) r);
+          from (select * from public.registro where fazenda_id = p_fazenda order by quando desc limit 200) r);
 end $$;
 
 -- ---------- ajustes (produtos, metas, regras) ----------
@@ -390,22 +380,20 @@ returns jsonb language plpgsql security definer set search_path = public as $$
 begin
   perform public._exige(p_token, array['adm']);
   return (select coalesce(jsonb_agg(jsonb_build_object(
-            'id', p.id, 'nome', p.nome, 'usuario', p.usuario, 'papel', p.papel, 'ativa', p.ativa, 'email', p.email,
+            'id', p.id, 'nome', p.nome, 'usuario', p.usuario, 'papel', p.papel, 'ativa', p.ativa,
             'fazendas', (select coalesce(jsonb_agg(pf.fazenda_id order by pf.fazenda_id), '[]') from public.pessoa_fazendas pf where pf.pessoa_id = p.id))
             order by p.ativa desc, p.nome), '[]')
           from public.pessoas p);
 end $$;
 
-drop function if exists public.adm_salvar_pessoa(text, int, text, text, text, text, boolean, text[]);
 create or replace function public.adm_salvar_pessoa(p_token text, p_id int, p_nome text, p_usuario text, p_senha text,
-                                                    p_papel text, p_ativa boolean, p_fazendas text[], p_email text default null)
+                                                    p_papel text, p_ativa boolean, p_fazendas text[])
 returns int language plpgsql security definer set search_path = public, extensions as $$
-declare s public.sessoes; v_id int := p_id; autor text; v_email text := nullif(lower(trim(coalesce(p_email, ''))), '');
+declare s public.sessoes; v_id int := p_id; autor text;
 begin
   s := public._exige(p_token, array['adm']);
   autor := public._autor(s);
   p_usuario := lower(trim(coalesce(p_usuario, '')));
-  if v_email is not null and v_email !~ '^[^@\s]+@[^@\s]+\.[^@\s]+$' then raise exception 'email_invalido' using errcode = 'P0001'; end if;
   if coalesce(trim(p_nome), '') = '' then raise exception 'nome_obrigatorio' using errcode = 'P0001'; end if;
   if p_usuario !~ '^[a-z0-9]+(\.[a-z0-9]+)+$' then raise exception 'usuario_invalido_formato' using errcode = 'P0001'; end if;
   if p_papel not in ('adm', 'tecnico') then raise exception 'papel_invalido' using errcode = 'P0001'; end if;
@@ -419,12 +407,12 @@ begin
     raise exception 'ultimo_adm' using errcode = 'P0001'; end if;
   if v_id is null then
     if coalesce(p_senha, '') = '' then raise exception 'senha_obrigatoria' using errcode = 'P0001'; end if;
-    insert into public.pessoas(nome, usuario, senha_hash, papel, ativa, email)
-    values (trim(p_nome), p_usuario, crypt(p_senha, gen_salt('bf')), p_papel, coalesce(p_ativa, true), v_email) returning id into v_id;
+    insert into public.pessoas(nome, usuario, senha_hash, papel, ativa)
+    values (trim(p_nome), p_usuario, crypt(p_senha, gen_salt('bf')), p_papel, coalesce(p_ativa, true)) returning id into v_id;
     perform public._registrar(null, autor, 'cadastrou a pessoa', trim(p_nome) || ' (' || p_papel || ')');
   else
     if not exists (select 1 from public.pessoas where id = v_id) then raise exception 'pessoa_inexistente' using errcode = 'P0001'; end if;
-    update public.pessoas set nome = trim(p_nome), usuario = p_usuario, papel = p_papel, ativa = coalesce(p_ativa, true), email = v_email where id = v_id;
+    update public.pessoas set nome = trim(p_nome), usuario = p_usuario, papel = p_papel, ativa = coalesce(p_ativa, true) where id = v_id;
     if coalesce(p_senha, '') <> '' then update public.pessoas set senha_hash = crypt(p_senha, gen_salt('bf')) where id = v_id; end if;
     if (coalesce(p_senha, '') <> '' or not coalesce(p_ativa, true)) and v_id is distinct from s.pessoa_id then
       delete from public.sessoes where pessoa_id = v_id; end if;    -- vale na hora
@@ -437,42 +425,6 @@ begin
   end if;
   return v_id;
 end $$;
-
--- ---------- backup semanal (executado só pelo robô do GitHub, pela conexão direta) ----------
--- Tudo o que é preciso para reconstruir os dados, SEM senhas (nem criptografadas) e sem sessões.
-create or replace function public.backup_completo()
-returns jsonb language sql stable security definer set search_path = public as $$
-  select jsonb_build_object(
-    'formato', 'mr-control-backup-1',
-    'gerado_em', now(),
-    'fazendas', (select coalesce(jsonb_agg(jsonb_build_object('id', id, 'nome', nome, 'ativa', ativa, 'criada_em', criada_em) order by id), '[]') from public.fazendas),
-    'pessoas', (select coalesce(jsonb_agg(jsonb_build_object('nome', p.nome, 'usuario', p.usuario, 'papel', p.papel, 'ativa', p.ativa, 'email', p.email,
-                  'fazendas', (select coalesce(jsonb_agg(pf.fazenda_id order by pf.fazenda_id), '[]') from public.pessoa_fazendas pf where pf.pessoa_id = p.id)) order by p.usuario), '[]')
-                from public.pessoas p),
-    'abas', (select coalesce(jsonb_agg(jsonb_build_object('fazenda_id', fazenda_id, 'retiro', retiro, 'ano', ano, 'mes', mes, 'arquivo', arquivo, 'aba', aba,
-               'n_tratos', n_tratos, 'enviado_por', enviado_por, 'enviado_em', enviado_em, 'dados', dados) order by fazenda_id, ano, mes, retiro), '[]') from public.abas),
-    'config', (select coalesce(jsonb_agg(to_jsonb(c) order by c.fazenda_id), '[]') from public.config c),
-    'config_hist', (select coalesce(jsonb_agg(to_jsonb(h) - 'id' order by h.quando), '[]') from public.config_hist h),
-    'registro', (select coalesce(jsonb_agg(to_jsonb(r) - 'id' order by r.quando), '[]') from public.registro r)
-  );
-$$;
-create or replace function public.backup_destinatarios()
-returns text[] language sql stable security definer set search_path = public as $$
-  select coalesce(array_agg(distinct email order by email), '{}') from public.pessoas where papel = 'adm' and ativa and email is not null;
-$$;
-create or replace function public.backup_resumo()
-returns jsonb language sql stable security definer set search_path = public as $$
-  select coalesce(jsonb_agg(jsonb_build_object('nome', f.nome, 'ativa', f.ativa,
-           'abas', (select count(*) from public.abas a where a.fazenda_id = f.id),
-           'tratos', (select coalesce(sum(n_tratos), 0) from public.abas a where a.fazenda_id = f.id),
-           'ultimo_envio', (select max(enviado_em) from public.abas a where a.fazenda_id = f.id)) order by f.nome), '[]')
-  from public.fazendas f;
-$$;
-create or replace function public.registrar_backup(p_destinatarios int, p_bytes bigint)
-returns void language sql security definer set search_path = public as $$
-  insert into public.registro(fazenda_id, autor, acao, detalhe)
-  values (null, 'robô', 'backup enviado', p_destinatarios || ' destinatário(s), ' || round(p_bytes / 1024.0) || ' KB');
-$$;
 
 -- ---------- manter o projeto ativo (o Supabase gratuito pausa após 7 dias sem uso) ----------
 create or replace function public.manter_ativo()
@@ -505,7 +457,7 @@ grant execute on function
   public.apagar_aba(text, text, bigint), public.registro_fazenda(text, text),
   public.salvar_config(text, text, jsonb), public.historico_config(text, text), public.restaurar_config(text, text, bigint),
   public.adm_listar_fazendas(text), public.adm_salvar_fazenda(text, text, text, text, boolean),
-  public.adm_listar_pessoas(text), public.adm_salvar_pessoa(text, int, text, text, text, text, boolean, text[], text),
+  public.adm_listar_pessoas(text), public.adm_salvar_pessoa(text, int, text, text, text, text, boolean, text[]),
   public.manter_ativo()
 to anon;
 notify pgrst, 'reload schema';

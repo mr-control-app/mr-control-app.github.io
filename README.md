@@ -60,7 +60,7 @@ Cada envio, substituição e exclusão de planilha fica registrado com nome e ho
 ### 3. Primeiro uso
 7. Entre com o seu usuário. Na aba **Fazendas**, cadastre cada fazenda: código (ex.: `mafra`), nome e **senha da equipe**.
 8. Na aba **Pessoas**, cadastre os técnicos e marque as fazendas de cada um.
-9. Escolha a fazenda, abra a aba **Lançamentos** e clique em **Lançar planilhas**. Pode selecionar várias de uma vez.
+9. Escolha a fazenda, abra a aba **Planilhas** e clique em **Lançar planilhas**. Pode selecionar várias de uma vez.
    Reenviar o mesmo retiro e mês **substitui** a versão anterior (para correções).
 10. No celular: abra o endereço e use "Adicionar à tela inicial".
 
@@ -76,7 +76,7 @@ a cada 3 dias sozinho. Para testar: **Actions → Manter ativo → Run workflow*
 ---
 
 ## Aba Lançamentos
-- **Lançar planilhas**: envia as "Folha Suplementação" (saiu do cabeçalho e fica aqui).
+As planilhas são enviadas na aba **Planilhas** (botão **Lançar planilhas**). Aqui se lança o consumo trato a trato.
 - **Lançar consumo**: um trato por vez, pensado para o celular. Retiro → número do pasto → número de animais →
   tipo de sal → sacos → data. Ao escolher o pasto, animais, tipo de sal, peso e categoria vêm do último trato
   daquele pasto (dá para mudar). A data começa em **hoje** e só aceita datas passadas (o banco também recusa

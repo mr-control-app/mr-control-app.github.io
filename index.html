@@ -193,7 +193,7 @@ details.mes{border-bottom:1px solid var(--line);padding:6px 0}details.mes summar
 </div>
 
 <div class="wrap">
-  <div id="msg" class="notice" role="status">Mostrando dados fictícios. Na aba <b>Lançamentos</b>, clique em <b>Lançar planilhas</b> e selecione as "Folha Suplementação" (pode selecionar várias de uma vez, de meses e anos diferentes). Os arquivos são lidos só neste navegador.</div>
+  <div id="msg" class="notice" role="status">Mostrando dados fictícios. Na aba <b>Planilhas</b>, clique em <b>Lançar planilhas</b> e selecione as "Folha Suplementação" (pode selecionar várias de uma vez, de meses e anos diferentes). Os arquivos são lidos só neste navegador.</div>
   <nav class="tabs" aria-label="Telas">
     <a href="#visao">Visão geral</a>
     <a href="#lancamentos">Lançamentos</a>
@@ -307,16 +307,11 @@ details.mes{border-bottom:1px solid var(--line);padding:6px 0}details.mes summar
           <div class="small" id="lcMsg" role="status"></div>
         </form>
       </div>
-      <div class="card"><h2>Lançar planilhas</h2>
-        <p class="note">Selecione as "Folha Suplementação" (.xlsx). Pode selecionar várias de uma vez, de meses e anos diferentes. Reenviar o mesmo retiro e mês substitui a versão anterior.</p>
-        <div class="row"><button class="btn primary lc-go" id="pick">Lançar planilhas</button></div>
-        <div class="drop" id="drop2" style="margin-top:12px">ou arraste as planilhas para cá</div>
-      </div>
+      <div class="card"><div class="row" style="justify-content:space-between"><h2>Lançamentos feitos no app</h2><span class="small" id="lcConta"></span></div>
+        <div class="notice warn" id="lcFila" hidden></div>
+        <p class="note">Se a planilha do mês trouxer o mesmo retiro, pasto e dia, vale a planilha e o lançamento do app não conta em dobro.</p>
+        <div class="scroll" id="lcLista" style="max-height:480px"></div></div>
     </div>
-    <div class="card"><div class="row" style="justify-content:space-between"><h2>Lançamentos feitos no app</h2><span class="small" id="lcConta"></span></div>
-      <div class="notice warn" id="lcFila" hidden></div>
-      <p class="note">Se a planilha do mês trouxer o mesmo retiro, pasto e dia, vale a planilha e o lançamento do app não conta em dobro.</p>
-      <div class="scroll" id="lcLista" style="max-height:480px"></div></div>
   </section>
 
   <section class="view" id="v-planilhas">
@@ -921,10 +916,10 @@ async function abrirFazenda(fid){
 }
 function mostrarSituacao(){
   if(ONLINE){
-    if(!ABAS.length)msg(`Nenhuma planilha salva para esta fazenda ainda. Na aba <b>Lançamentos</b>, use <b>Lançar planilhas</b> ou lance os tratos um a um.`);
+    if(!ABAS.length)msg(`Nenhuma planilha salva para esta fazenda ainda. Envie na aba <b>Planilhas</b> ou lance os tratos um a um na aba <b>Lançamentos</b>.`);
     else{const u=ABAS.reduce((m,a)=>a.enviado_em>m.enviado_em?a:m,ABAS[0]);
       msg(`<b>${ABAS.length} planilhas salvas</b> (${f0(ALL.length)} lançamentos). Último envio: ${esc(u.retiro)} ${String(u.mes).padStart(2,"0")}/${u.ano}, por ${esc(u.enviado_por)} em ${new Date(u.enviado_em).toLocaleDateString("pt-BR")}.`);}
-  }else if(SRC==="Exemplo fictício")msg(`Mostrando dados fictícios. Na aba <b>Lançamentos</b>, clique em <b>Lançar planilhas</b> e selecione as "Folha Suplementação". Elas ficam salvas neste aparelho.`);
+  }else if(SRC==="Exemplo fictício")msg(`Mostrando dados fictícios. Na aba <b>Planilhas</b>, clique em <b>Lançar planilhas</b> e selecione as "Folha Suplementação". Elas ficam salvas neste aparelho.`);
   else msg(`<b>${ABAS.length} planilhas salvas neste aparelho</b> (${f0(ALL.length)} lançamentos). Para compartilhar com a equipe, o administrador precisa configurar o banco (veja o LEIA-ME).`);
 }
 
@@ -961,7 +956,7 @@ async function readFiles(list){
   if(erros.length)msg(`${$("#msg").innerHTML}<br>Algumas abas foram ignoradas: ${erros.slice(0,4).map(esc).join(" ")}${erros.length>4?` (+${erros.length-4})`:""}`,true);
 }
 const inp=document.getElementById("files");
-for(const id of ["pick","pick2"])document.getElementById(id).onclick=()=>inp.click();
+document.getElementById("pick2").onclick=()=>inp.click();
 inp.onchange=()=>{const lista=[...inp.files];readFiles(lista).finally(()=>{inp.value="";});};
 const drops=[...document.querySelectorAll(".drop")];const marcar=on=>drops.forEach(d=>d.classList.toggle("over",on));
 for(const el of [...drops,document.body]){el.addEventListener("dragover",e=>{e.preventDefault();marcar(true);});el.addEventListener("dragleave",()=>marcar(false));

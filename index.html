@@ -114,6 +114,38 @@ tr.click{cursor:pointer}tr.click:hover td{background:var(--accent-soft)}
 .bullet .meta{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--ink)}
 svg text{fill:var(--muted);font:11px var(--body)}
 svg .axis{stroke:var(--line)}
+.det-tit{font:600 13px var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:26px 0 8px;display:flex;align-items:center;gap:10px}
+.det-tit::after{content:"";flex:1;height:1px;background:var(--line)}
+.hb,.st100,.strip{display:grid;gap:7px;font-size:13px}
+.hb-l,.st-l,.sp-l{display:grid;grid-template-columns:minmax(70px,32%) 1fr minmax(52px,auto);gap:10px;align-items:center;border-radius:6px}
+.hb-l[data-k]{cursor:pointer}.hb-l[data-k]:hover,.hb-l[data-k]:focus-visible{background:var(--accent-soft);outline:none}
+.hb-n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hb-t,.st-t,.sp-t{position:relative;height:16px}
+.hb-b{position:absolute;left:0;top:2px;height:12px;border-radius:0 4px 4px 0;min-width:2px}
+.hb-band{position:absolute;top:-2px;bottom:-2px;background:var(--band)}
+.hb-ref{position:absolute;top:-3px;bottom:-3px;width:1px;background:var(--muted)}
+.hb-v{text-align:right;white-space:nowrap}.hb-v small{display:block;color:var(--muted);font-size:11px}
+.st-t{display:flex;gap:2px;height:22px}
+.st-s{display:grid;place-items:center;height:100%;font-style:normal;color:var(--surface);font-size:11px;min-width:2px}
+.st-s:first-child{border-radius:4px 0 0 4px}.st-s:last-child{border-radius:0 4px 4px 0}.st-s:only-child{border-radius:4px}
+.sp-t{height:24px;border-bottom:1px solid var(--line)}
+.sp-band{position:absolute;top:0;bottom:0;background:var(--band)}
+.sp-zero{position:absolute;top:0;bottom:0;width:1px;background:var(--muted)}
+.sp-d{position:absolute;top:6px;width:12px;height:12px;margin-left:-6px;border-radius:50%;box-shadow:0 0 0 2px var(--surface);opacity:.9;cursor:pointer}
+.sp-d:hover,.sp-d:focus-visible{transform:scale(1.5);opacity:1;outline:none;z-index:2}
+.sp-ax{position:relative;height:16px;color:var(--muted);font-size:11px}.sp-ax span{position:absolute;white-space:nowrap}
+.g-leg{margin-top:10px}
+.fm-card h3{font:600 17px var(--display);margin:0}
+.fm-card .fm-top{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.fm-card .field{max-width:none}
+.fm-tot{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.fm-tot div{background:var(--bg);border-radius:8px;padding:8px 10px}.fm-tot b{display:block;font:600 17px var(--display)}.fm-tot span{font-size:11px;color:var(--muted)}
+@media (max-width:600px){.fm-tot{grid-template-columns:1fr 1fr}.fm-card .fm-top{grid-template-columns:1fr}.fm-card table.cfg select{max-width:118px;padding:6px 4px}.fm-card table.cfg td input.fm-n{width:56px;min-width:0}.fm-card table.cfg th,.fm-card table.cfg td{padding-left:4px;padding-right:4px}}
+table.cfg input.fm-n{width:90px}table.cfg select{padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);max-width:220px}
+.fm-barra{position:sticky;bottom:12px;z-index:5;display:flex;gap:10px;align-items:center;justify-content:flex-end;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);box-shadow:0 6px 24px rgba(0,0,0,.12);border-radius:12px;padding:10px 14px;margin-top:16px}
+.fm-barra span{margin-right:auto;font-weight:600;color:var(--low)}
+#v-formulas.ro input,#v-formulas.ro select,#v-formulas.ro textarea{pointer-events:none;background:transparent;border-color:transparent}
+@media (max-width:600px){.sp-l{grid-template-columns:1fr auto;gap:2px 8px}.sp-l .sp-t,.sp-l .sp-ax{grid-column:1/-1;grid-row:2}.sp-l>span:empty{display:none}.strip{gap:12px}}
 .empty{color:var(--muted);font-size:14px;padding:12px 0}
 .drop{border:2px dashed var(--line);border-radius:10px;padding:18px;text-align:center;color:var(--muted)}
 .drop.over{border-color:var(--accent);background:var(--accent-soft)}
@@ -136,14 +168,41 @@ td.ind{padding-left:24px;color:var(--muted)}tr.grp td{background:var(--accent-so
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:grid;place-items:center;padding:16px;z-index:20}
 .modal .card{width:100%;max-width:420px}
 .form{display:grid;gap:10px}.form .field{max-width:none}
-.lanc .field label{font-size:13px;font-weight:600;color:var(--ink)}
-.lanc .field input,.lanc .field select{font-size:17px;padding:10px 12px;border-radius:8px}
-.lanc .dias{display:flex;gap:6px;margin-top:4px}.lanc .dias .btn{padding:5px 12px;font-size:13px}
-.lc-go{font-size:16px;padding:11px 24px}
-.lc-ult{margin-top:-4px;min-height:18px}
-.lc-resumo{padding:10px 12px;border-radius:8px;background:var(--accent-soft);font-size:14px;line-height:1.55}
-.lc-resumo:empty{display:none}
-#lcMais summary{cursor:pointer;padding:4px 0}#lcMais[open]{display:grid;gap:10px}
+.lc-wrap{max-width:600px;margin:0 auto;display:grid;gap:16px}
+.lc-card{padding:20px}
+.lc-tit{font-size:24px;text-align:center;margin-bottom:2px}.lc-sub{text-align:center;margin-top:0}
+.lc-passo{border:0;margin:0;padding:14px 0 16px;border-top:1px solid var(--line);display:grid;gap:10px;min-width:0}
+.lc-passo legend{font:600 17px var(--display);color:var(--ink);display:flex;align-items:center;gap:10px;padding:0 0 10px;float:left;width:100%}
+.lc-n{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--brand);color:var(--brand-ink);font:600 15px var(--body);flex:none}
+.lc-passo.feito .lc-n{background:var(--ok)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:48px;padding:10px 16px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font:500 16px var(--body);cursor:pointer;touch-action:manipulation}
+.chip:hover{border-color:var(--accent)}
+.chip[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--brand-ink);font-weight:600}
+.chips-pasto{max-height:212px;overflow-y:auto;padding:2px}
+.chips-pasto .chip{min-width:64px;justify-content:center;border-radius:12px;font-weight:600}
+.lc-in{width:100%;font-size:18px;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink)}
+.lc-in:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.lc-big{font:600 26px var(--display);text-align:center;letter-spacing:.02em}
+.stepper{display:grid;grid-template-columns:64px 1fr 64px;gap:10px;align-items:stretch}
+.st-b{border:1.5px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font:600 30px var(--body);min-height:60px;cursor:pointer;touch-action:manipulation}
+.st-b:active{background:var(--accent-soft)}
+.lc-num{font:600 30px var(--display);text-align:center;-moz-appearance:textfield}
+.lc-num::-webkit-inner-spin-button,.lc-num::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.lc-kg{text-align:center;min-height:18px}
+.lc-ult{text-align:center;min-height:18px}
+.lc-mais{border-top:1px solid var(--line);padding-top:12px}.lc-mais summary{cursor:pointer;color:var(--muted);font-size:14px;padding:4px 0}
+.lc-mais[open]{display:grid;gap:10px}.lc-mais .field{max-width:none}
+.lc-resumo{margin:14px 0 12px;padding:16px;border-radius:12px;background:var(--accent-soft);font-size:16px;line-height:1.6;text-align:center}
+.lc-resumo:empty{display:none}.lc-resumo .rp{font:600 22px var(--display);display:block}
+.lc-go{width:100%;font-size:20px;padding:16px;border-radius:12px;margin-top:4px}
+.lc-msg{margin-top:12px;text-align:center;font-size:15px;min-height:20px}
+.lc-item{display:grid;grid-template-columns:auto 1fr auto;gap:4px 12px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.lc-item:first-child{border-top:0}
+.lc-dia{font:600 15px var(--display);text-align:center;background:var(--bg);border-radius:10px;padding:6px 8px;min-width:58px;line-height:1.15}
+.lc-dia small{display:block;font:400 11px var(--body);color:var(--muted)}
+.lc-txt>b{font-size:16px}.lc-txt .small b{color:var(--ink)}.lc-txt .small{display:block}
+.lc-acao{display:grid;gap:6px;justify-items:end}
 .chk{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px}
 .chk label{display:flex;gap:6px;align-items:center}
 .ro input{pointer-events:none;opacity:.75}
@@ -203,6 +262,7 @@ details.mes{border-bottom:1px solid var(--line);padding:6px 0}details.mes summar
     <a href="#tendencia">Histórico</a>
     <a href="#logistica">Logística</a>
     <a href="#auditoria">Auditoria</a>
+    <a href="#formulas">Fórmulas e batidas</a>
     <a href="#planilhas">Planilhas</a>
     <a href="#ajustes">Ajustes</a>
     <a href="#fazendas" class="adm-only" hidden>Fazendas</a>
@@ -223,6 +283,15 @@ details.mes{border-bottom:1px solid var(--line);padding:6px 0}details.mes summar
 
   <!-- RELATÓRIO -->
   <section class="view" id="v-relatorio">
+    <div class="grid g2" style="align-items:start">
+      <div class="card"><h2>Animais suplementados por retiro</h2><p class="note">Média de cabeças no período filtrado.</p><div id="gRelAn"></div></div>
+      <div class="card"><h2>Situação dos pastos, por retiro</h2><p class="note">Proporção dos pastos avaliados em cada situação. O número à direita é o total de pastos avaliados.</p><div id="gRelSt"></div></div>
+    </div>
+    <div class="grid g2" style="align-items:start">
+      <div class="card"><h2>Consumo × meta por categoria</h2><p class="note">Barra = consumo real; traço = meta; faixa = tolerância.</p><div id="gRelCat"></div></div>
+      <div class="card"><h2>Sacos fornecidos por produto</h2><p class="note">Total no período filtrado.</p><div id="gRelProd"></div></div>
+    </div>
+    <h2 class="det-tit">Detalhamento</h2>
     <div class="card"><h2>Relatório por retiro e produto</h2>
       <p class="note">Animais = média de cabeças no período. Peso médio ponderado pelo número de animais de cada linha da planilha. Lotação em UA/ha pelo mapa de gado do último mês do retiro.</p>
       <div class="scroll" id="tRel"></div></div>
@@ -231,6 +300,15 @@ details.mes{border-bottom:1px solid var(--line);padding:6px 0}details.mes summar
 
   <!-- PASTOS -->
   <section class="view" id="v-pastos">
+    <div class="card"><h2>Onde cada pasto está em relação à meta</h2>
+      <p class="note">Cada ponto é um pasto: quanto o consumo do período ficou acima (direita) ou abaixo (esquerda) da meta. Faixa verde = tolerância. Toque num ponto para ver os tratos do pasto.</p>
+      <div id="gStrip"></div></div>
+    <div class="grid g2" style="align-items:start">
+      <div class="card"><h2>Mais acima da meta</h2><p class="note">% acima da meta. Toque para ver os tratos.</p><div id="gHigh"></div></div>
+      <div class="card"><h2>Mais abaixo da meta</h2><p class="note">% abaixo da meta. Toque para ver os tratos.</p><div id="gLow"></div></div>
+    </div>
+    <div class="card" id="pastoDet" hidden></div>
+    <h2 class="det-tit">Detalhamento</h2>
     <div class="card">
       <div class="row" style="justify-content:space-between"><h2>Mapa de consumo: pasto × mês</h2>
         <div class="legend"><span><i style="background:var(--ok-soft);outline:1px solid var(--ok)"></i>Dentro</span><span><i style="background:var(--high-soft);outline:1px solid var(--high)"></i>Acima</span><span><i style="background:var(--low-soft);outline:1px solid var(--low)"></i>Abaixo</span><span><i style="background:var(--none-soft)"></i>Sem meta</span></div></div>
@@ -238,10 +316,9 @@ details.mes{border-bottom:1px solid var(--line);padding:6px 0}details.mes summar
       <div class="scroll heat" id="heat"></div>
     </div>
     <div class="grid g2">
-      <div class="card"><h2>Mais acima da meta</h2><div class="scroll" id="rkHigh"></div></div>
-      <div class="card"><h2>Mais abaixo da meta</h2><div class="scroll" id="rkLow"></div></div>
+      <div class="card"><h2>Ranking: acima da meta</h2><div class="scroll" id="rkHigh"></div></div>
+      <div class="card"><h2>Ranking: abaixo da meta</h2><div class="scroll" id="rkLow"></div></div>
     </div>
-    <div class="card" id="pastoDet" hidden></div>
   </section>
 
   <!-- TENDÊNCIA -->
@@ -251,11 +328,14 @@ details.mes{border-bottom:1px solid var(--line);padding:6px 0}details.mes summar
       <div class="card"><h2>Animais suplementados por mês</h2><div id="barAnim"></div></div>
       <div class="card"><h2>Lotação por mês (UA/ha)</h2><div id="barLot"></div></div>
     </div>
-    <div class="card"><h2>Mesmo mês, anos diferentes</h2><p class="note">Consumo real (kg/cab/dia) por mês e ano. Útil a partir do segundo ano de planilhas.</p><div class="scroll" id="yoy"></div></div>
+    <div class="card"><h2>Mesmo mês, anos diferentes</h2><p class="note">Consumo real (kg/cab/dia) de cada mês, uma linha por ano. O ano mais recente fica em destaque.</p><div id="gYoy"></div></div>
     <div class="grid g2" style="align-items:start">
       <div class="card"><h2>Seca × Águas</h2><div id="season"></div></div>
-      <div class="card"><h2>Consistência do cocho</h2><p class="note">Variação do consumo entre tratos (CV). Valores altos sugerem falha de abastecimento ou de cocho.</p><div class="scroll" id="cv"></div></div>
+      <div class="card"><h2>Consistência do cocho</h2><p class="note">Variação do consumo entre tratos (CV), pastos mais irregulares. Valores altos sugerem falha de abastecimento ou de cocho. Toque para ver os tratos.</p><div id="gCv"></div></div>
     </div>
+    <h2 class="det-tit">Detalhamento</h2>
+    <div class="card"><h2>Mesmo mês, anos diferentes</h2><p class="note">Consumo e meta (kg/cab/dia) por mês e ano.</p><div class="scroll" id="yoy"></div></div>
+    <div class="card"><h2>Consistência do cocho</h2><div class="scroll" id="cv"></div></div>
   </section>
 
   <!-- CAPATAZES -->
@@ -268,16 +348,26 @@ details.mes{border-bottom:1px solid var(--line);padding:6px 0}details.mes summar
   <!-- LOGÍSTICA -->
   <section class="view" id="v-logistica">
     <div class="grid g4" id="kLog"></div>
-    <div class="card"><h2>Conciliação saída de fábrica × fornecido</h2><p class="note">Verde: fornecido entre 90% e 110% da saída. Estoque teórico positivo = saiu da fábrica e não foi lançado no cocho.</p><div class="scroll" id="concil"></div></div>
-    <div class="grid g2">
-      <div class="card"><h2>Previsão de sacos para o próximo mês</h2><p class="note" id="prevNote"></p><div class="scroll" id="prev"></div></div>
-      <div class="card"><h2>Custo</h2><p class="note">Preencha o preço por kg em Ajustes. Excedente = kg consumidos acima do limite máximo.</p><div class="grid g2" id="cost"></div></div>
+    <div class="card"><h2>Saída de fábrica × fornecido, por mês</h2><p class="note">Sacos que saíram da fábrica e sacos lançados no cocho em cada mês.</p><div id="gSaida"></div></div>
+    <div class="grid g2" style="align-items:start">
+      <div class="card"><h2>Fornecido ÷ saída, por retiro</h2><p class="note">Faixa verde = ideal (90% a 110%). Acima: lançou mais do que saiu; abaixo: saiu e não foi lançado.</p><div id="gRazao"></div></div>
+      <div class="card"><h2>Previsão de sacos para o próximo mês</h2><p class="note" id="prevNote"></p><div id="gPrev"></div></div>
     </div>
+    <div class="card"><h2>Custo</h2><p class="note">Preço por kg dos Ajustes ou, quando houver, o custo da fórmula ligada ao produto (aba Fórmulas e batidas). Excedente = kg consumidos acima do limite máximo.</p><div class="grid g4" id="cost"></div></div>
+    <h2 class="det-tit">Detalhamento</h2>
+    <div class="card"><h2>Conciliação saída de fábrica × fornecido</h2><p class="note">Verde: fornecido entre 90% e 110% da saída. Estoque teórico positivo = saiu da fábrica e não foi lançado no cocho.</p><div class="scroll" id="concil"></div></div>
+    <div class="card"><h2>Previsão por retiro e produto</h2><div class="scroll" id="prev"></div></div>
   </section>
 
   <!-- AUDITORIA -->
   <section class="view" id="v-auditoria">
     <div class="grid g4" id="kAud"></div>
+    <div class="card"><h2>Alertas por tipo</h2><p class="note">Toque num tipo para filtrar a tabela.</p><div id="gAlTipo"></div></div>
+    <div class="grid g2" style="align-items:start">
+      <div class="card"><h2>Alertas por retiro</h2><p class="note">Quantidade e % dos lançamentos do retiro.</p><div id="gAlRet"></div></div>
+      <div class="card"><h2>Alertas por mês</h2><div id="gAlMes"></div></div>
+    </div>
+    <h2 class="det-tit">Detalhamento</h2>
     <div class="card"><div class="row" style="justify-content:space-between"><h2>Lançamentos com alerta</h2><div class="field" style="max-width:260px"><label for="fAlert">Tipo de alerta</label><select id="fAlert"></select></div></div>
       <p class="note">Corrija na planilha de origem e abra de novo. "Mudança de cabeças" pode ser troca de lote legítima.</p>
       <div class="scroll" id="aud" style="max-height:560px"></div></div>
@@ -285,33 +375,70 @@ details.mes{border-bottom:1px solid var(--line);padding:6px 0}details.mes summar
 
   <!-- PLANILHAS -->
   <section class="view" id="v-lancamentos">
-    <div class="grid g2" style="align-items:start">
-      <div class="card"><h2>Lançar consumo</h2>
-        <p class="note">Um trato por vez. Lançar de novo o mesmo pasto no mesmo dia corrige o anterior.</p>
-        <form class="form lanc" id="lcForm" autocomplete="off" novalidate>
-          <div class="field"><label for="lcRet">Retiro</label><select id="lcRet"></select>
-            <input id="lcRetNovo" placeholder="Nome do retiro" autocapitalize="characters" aria-label="Nome do novo retiro" hidden></div>
-          <div class="field"><label for="lcPasto">Número do pasto</label><input id="lcPasto" list="lcPastos" autocapitalize="characters" spellcheck="false" placeholder="ex.: 12A"><datalist id="lcPastos"></datalist></div>
+    <div class="lc-wrap">
+      <form class="card lc-card" id="lcForm" autocomplete="off" novalidate>
+        <h2 class="lc-tit">Lançar consumo</h2>
+        <p class="note lc-sub">Toque nas opções. Lançar de novo o mesmo pasto no mesmo dia corrige o anterior.</p>
+        <input type="hidden" id="lcRet">
+        <fieldset class="lc-passo"><legend><span class="lc-n">1</span>Retiro</legend>
+          <div class="chips" id="lcRetChips" role="group" aria-label="Retiro"></div>
+          <input class="lc-in" id="lcRetNovo" placeholder="Nome do novo retiro" autocapitalize="characters" aria-label="Nome do novo retiro" hidden>
+        </fieldset>
+        <fieldset class="lc-passo"><legend><span class="lc-n">2</span>Número do pasto</legend>
+          <input class="lc-in lc-big" id="lcPasto" autocapitalize="characters" spellcheck="false" placeholder="Digite ou toque abaixo" aria-label="Número do pasto">
+          <div class="chips chips-pasto" id="lcPastoChips" role="group" aria-label="Pastos do retiro"></div>
           <div class="lc-ult small" id="lcUlt" aria-live="polite"></div>
-          <div class="field"><label for="lcQtd">Número de animais</label><input id="lcQtd" type="number" inputmode="numeric" min="1" step="1"></div>
-          <div class="field"><label for="lcTipo">Tipo de sal</label><input id="lcTipo" list="lcTipos" autocapitalize="characters" spellcheck="false"><datalist id="lcTipos"></datalist></div>
-          <div class="field"><label for="lcSacos">Sacos fornecidos</label><input id="lcSacos" type="number" inputmode="decimal" min="0.5" step="0.5"></div>
-          <div class="field"><label for="lcData">Data</label><input id="lcData" type="date">
-            <div class="dias"><button type="button" class="btn" data-dia="0">Hoje</button><button type="button" class="btn" data-dia="1">Ontem</button><button type="button" class="btn" data-dia="2">Anteontem</button></div></div>
-          <details id="lcMais"><summary class="small">Peso e categoria (opcional: vêm do último trato do pasto)</summary>
-            <div class="field"><label for="lcPeso">Peso estimado (kg)</label><input id="lcPeso" type="number" inputmode="numeric" min="20" max="1500"></div>
-            <div class="field"><label for="lcCat">Categoria</label><input id="lcCat" list="lcCats" autocapitalize="characters"><datalist id="lcCats"></datalist></div>
-          </details>
-          <div class="lc-resumo" id="lcResumo" aria-live="polite"></div>
-          <div class="row"><button class="btn primary lc-go" type="submit" id="lcBtn">Lançar</button></div>
-          <div class="small" id="lcMsg" role="status"></div>
-        </form>
-      </div>
-      <div class="card"><div class="row" style="justify-content:space-between"><h2>Lançamentos feitos no app</h2><span class="small" id="lcConta"></span></div>
+        </fieldset>
+        <fieldset class="lc-passo"><legend><span class="lc-n">3</span>Número de animais</legend>
+          <div class="stepper"><button type="button" class="st-b" data-st="lcQtd" data-d="-1" aria-label="Menos 1 animal">−</button>
+            <input class="lc-in lc-num" id="lcQtd" type="number" inputmode="numeric" min="1" step="1" aria-label="Número de animais">
+            <button type="button" class="st-b" data-st="lcQtd" data-d="1" aria-label="Mais 1 animal">+</button></div>
+        </fieldset>
+        <fieldset class="lc-passo"><legend><span class="lc-n">4</span>Tipo de sal</legend>
+          <div class="chips" id="lcTipoChips" role="group" aria-label="Tipo de sal"></div>
+          <input class="lc-in" id="lcTipo" autocapitalize="characters" spellcheck="false" placeholder="Digite o tipo de sal" aria-label="Tipo de sal" hidden>
+        </fieldset>
+        <fieldset class="lc-passo"><legend><span class="lc-n">5</span>Sacos fornecidos</legend>
+          <div class="stepper"><button type="button" class="st-b" data-st="lcSacos" data-d="-1" aria-label="Menos 1 saco">−</button>
+            <input class="lc-in lc-num" id="lcSacos" type="number" inputmode="decimal" min="0.5" step="0.5" aria-label="Sacos fornecidos">
+            <button type="button" class="st-b" data-st="lcSacos" data-d="1" aria-label="Mais 1 saco">+</button></div>
+          <div class="small lc-kg" id="lcKg"></div>
+        </fieldset>
+        <fieldset class="lc-passo"><legend><span class="lc-n">6</span>Data</legend>
+          <div class="chips" role="group" aria-label="Data">
+            <button type="button" class="chip" data-dia="0">Hoje</button><button type="button" class="chip" data-dia="1">Ontem</button>
+            <button type="button" class="chip" data-dia="2">Anteontem</button><button type="button" class="chip" id="lcOutraData">Outra data</button></div>
+          <input class="lc-in" id="lcData" type="date" aria-label="Data do trato" hidden>
+        </fieldset>
+        <details id="lcMais" class="lc-mais"><summary>Peso e categoria (opcional, vêm do último trato)</summary>
+          <div class="field"><label for="lcPeso">Peso estimado (kg)</label><input class="lc-in" id="lcPeso" type="number" inputmode="numeric" min="20" max="1500"></div>
+          <div class="field"><label for="lcCat">Categoria</label><input class="lc-in" id="lcCat" list="lcCats" autocapitalize="characters"><datalist id="lcCats"></datalist></div>
+        </details>
+        <div class="lc-resumo" id="lcResumo" aria-live="polite"></div>
+        <button class="btn primary lc-go" type="submit" id="lcBtn">Lançar</button>
+        <div class="lc-msg" id="lcMsg" role="status"></div>
+      </form>
+      <div class="card lc-card"><div class="row" style="justify-content:space-between"><h2>Lançamentos feitos no app</h2><span class="small" id="lcConta"></span></div>
         <div class="notice warn" id="lcFila" hidden></div>
         <p class="note">Se a planilha do mês trouxer o mesmo retiro, pasto e dia, vale a planilha e o lançamento do app não conta em dobro.</p>
-        <div class="scroll" id="lcLista" style="max-height:480px"></div></div>
+        <div id="lcLista"></div></div>
     </div>
+  </section>
+
+  <section class="view" id="v-formulas">
+    <div class="notice" id="fmAviso" hidden></div>
+    <div class="grid g2" style="align-items:start">
+      <div class="card"><h2>Custo por kg de cada fórmula</h2><p class="note">Custo dos insumos ÷ kg da batida. Fórmulas com insumo sem preço não aparecem.</p><div id="gFmCusto"></div></div>
+      <div class="card"><h2>Planejamento de batidas</h2><p class="note" id="fmPlanNote"></p><div id="gFmPlan"></div></div>
+    </div>
+    <div class="card"><div class="row" style="justify-content:space-between"><h2>Insumos e preços</h2><button class="btn fm-ed" id="fmAddIns">Adicionar insumo</button></div>
+      <p class="note">Produtos usados nas batidas. Informe o peso da embalagem e o preço pago nela: o app calcula o R$/kg.</p>
+      <div class="scroll"><table class="cfg" id="fmIns"></table></div></div>
+    <div class="row" style="justify-content:space-between;margin-top:18px"><h2 style="margin:0">Fórmulas</h2><button class="btn fm-ed" id="fmAddForm">Nova fórmula</button></div>
+    <p class="note">Cada fórmula é uma batida: quantos kg de cada insumo entram nela. Ligue a fórmula ao produto (tipo de sal) dos Ajustes para que o custo dela seja usado na aba Logística.</p>
+    <div class="grid g2" id="fmLista" style="align-items:start"></div>
+    <div class="card"><h2>Compra de insumos para o próximo mês</h2><p class="note">Batidas do planejamento × kg de cada insumo na fórmula.</p><div class="scroll" id="fmCompra"></div></div>
+    <div class="fm-barra fm-ed" id="fmBarra" hidden><span id="fmSujo">Alterações não salvas</span><button class="btn" id="fmDesfazer">Desfazer</button><button class="btn primary" id="fmSalvar">Salvar fórmulas e preços</button></div>
   </section>
 
   <section class="view" id="v-planilhas">
@@ -401,9 +528,12 @@ const DEFAULT_CFG={
     {chave:"0.4",pv:0.4,saco:30,preco:null},
     {chave:"0.5",pv:0.5,saco:30,preco:null}
   ],
-  tolerancia:25, diasMax:30, fatorAlto:3, mudanca:30, mesesSeca:[5,6,7,8,9], pesoUA:450
+  tolerancia:25, diasMax:30, fatorAlto:3, mudanca:30, mesesSeca:[5,6,7,8,9], pesoUA:450,
+  insumos:[],   // [{id, nome, emb (kg da embalagem), preco (R$ da embalagem), em (data do preço)}]
+  formulas:[]   // [{id, nome, produto (chave dos Ajustes ou ""), itens:[{ins, kg}], obs}]
 };
 let CFG=loadCfg();
+let FM=null,FM_SUJO=false;   // rascunho da aba Fórmulas e batidas
 function loadCfg(){try{const s=localStorage.getItem("mrcontrol-cfg");if(s){const c=JSON.parse(s);return Object.assign(structuredClone(DEFAULT_CFG),c);}}catch(e){}return structuredClone(DEFAULT_CFG);}
 function saveCfg(){try{localStorage.setItem("mrcontrol-cfg",JSON.stringify(CFG));}catch(e){}}
 
@@ -478,6 +608,13 @@ function abasToRows(abas){
 const DAY=864e5;
 const ymd=d=>d.toISOString().slice(0,10);
 const endOfMonth=d=>new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0));
+// ---------- fórmulas: custo por kg ----------
+const insKg=i=>i&&i.emb>0&&i.preco>0?i.preco/i.emb:null;                       // R$/kg do insumo
+function calcFormula(f,ins=CFG.insumos){const m=new Map((ins||[]).map(i=>[i.id,i]));let kg=0,custo=0,falta=0;
+  for(const it of f.itens||[]){const q=+it.kg||0;kg+=q;const pk=insKg(m.get(it.ins));if(pk==null){if(q)falta++;}else custo+=q*pk;}
+  return {kg,custo,falta,ckg:kg>0&&!falta?custo/kg:null};}
+function formulaDoProduto(p,c=CFG){return p&&(c.formulas||[]).find(f=>f.produto&&f.produto===p.chave)||null;}
+function precoDe(p){if(!p)return null;const f=formulaDoProduto(p);const ck=f?calcFormula(f).ckg:null;return ck!=null?ck:(p.preco!=null?p.preco:null);}
 function produtoDe(tipo){if(!tipo)return null;for(const p of CFG.produtos){if(p.chave&&tipo.includes(String(p.chave).toUpperCase()))return p;}return null;}
 function median(a){if(!a.length)return null;const s=[...a].sort((x,y)=>x-y),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2;}
 
@@ -490,7 +627,7 @@ function compute(raw){
     let ano=r.data.getUTCFullYear();const dm=r.data.getUTCMonth()+1;
     const mN=r.mesNum||dm;const dif=mN-dm;if(dif<-6)ano++;else if(dif>6)ano--;
     return Object.assign({},r,{prod,pesoSaco,kg:r.sacos*pesoSaco,meta,lmin:meta!=null?meta*(1-tol):null,lmax:meta!=null?meta*(1+tol):null,
-      preco:prod&&prod.preco!=null?prod.preco:null,ano,mesNum:mN,mesKey:ano*100+mN,mes:`${MESES[mN-1]}/${ano}`,
+      preco:precoDe(prod),ano,mesNum:mN,mesKey:ano*100+mN,mes:`${MESES[mN-1]}/${ano}`,
       periodo:CFG.mesesSeca.includes(mN)?"Seca":"Águas",catP:catPad(r.cat)});
   });
   // por Retiro + Pasto, através de todos os meses
@@ -658,6 +795,100 @@ function donut(counts){
   <div style="display:grid;gap:6px">${counts.map(c=>`<div><span class="pill p-${c.cls}">${c.t}</span> <b class="num">${c.n}</b> <span class="small">(${pc(c.n/tot)})</span></div>`).join("")}</div></div>`;
 }
 
+
+// ---------- gráficos-resumo (HTML: acompanham a largura da tela, legíveis no celular) ----------
+const vazio=t=>`<div class="empty">${t||"Sem dados com estes filtros."}</div>`;
+const legSt=(ls)=>`<div class="legend g-leg">${ls.map(([c,t])=>`<span><i style="background:var(--${c})"></i>${t}</span>`).join("")}</div>`;
+// barras horizontais: uma medida. Cor única (accent) ou cor de situação quando a cor significa situação.
+function hbars(items,o={}){
+  const it=items.filter(i=>i.v!=null&&isFinite(i.v));if(!it.length)return vazio();
+  const mx=Math.max(...it.map(i=>i.v),...(o.band||[]),o.ref??0)*1.06||1;const x=v=>Math.max(0,v/mx*100).toFixed(2)+"%";
+  return `<div class="hb">`+it.map(i=>`<div class="hb-l"${i.k!=null?` data-k="${esc(i.k)}" tabindex="0" role="button"`:""} title="${esc(i.tip||(i.l+": "+o.fmt(i.v)))}">
+    <span class="hb-n">${esc(i.l)}</span><span class="hb-t">${o.band?`<i class="hb-band" style="left:${x(o.band[0])};width:calc(${x(o.band[1])} - ${x(o.band[0])})"></i>`:""}${o.ref!=null?`<i class="hb-ref" style="left:${x(o.ref)}"></i>`:""}<i class="hb-b" style="width:${x(i.v)};background:var(--${i.cls||"accent"})"></i></span>
+    <span class="hb-v num">${o.fmt(i.v)}${i.sub?`<small>${esc(i.sub)}</small>`:""}</span></div>`).join("")+`</div>`+(o.legend||"");
+}
+const ST_SEG=[["Dentro","ok","Dentro da meta"],["Acima","high","Acima do limite"],["Abaixo","low","Abaixo do limite"]];
+function stack100(linhas){
+  const ls=linhas.filter(r=>r.tot);if(!ls.length)return vazio("Nenhum pasto com meta para avaliar.");
+  return `<div class="st100">`+ls.map(r=>`<div class="st-l"><span class="hb-n">${esc(r.l)}</span><span class="st-t">${ST_SEG.filter(([k])=>r.n[k]).map(([k,c,t])=>{const w=r.n[k]/r.tot*100;
+      return `<i class="st-s" style="width:${w}%;background:var(--${c})" title="${esc(r.l)} · ${t}: ${r.n[k]} de ${r.tot} pastos (${pc(r.n[k]/r.tot)})">${w>=16?Math.round(w)+"%":""}</i>`;}).join("")}</span><span class="hb-v num">${r.tot}</span></div>`).join("")+`</div>`
+    +legSt(ST_SEG.map(([,c,t])=>[c,t]));
+}
+// cada pasto é um ponto: desvio do consumo contra a meta, por retiro
+function stripPlot(P){
+  const ps=P.filter(p=>p.cons!=null&&p.meta>0);if(!ps.length)return vazio("Nenhum pasto com consumo e meta nestes filtros.");
+  const lim=0.6,tol=CFG.tolerancia/100,x=v=>(2+(Math.max(-lim,Math.min(lim,v))+lim)/(2*lim)*96).toFixed(2)+"%";   // 2% de margem: ponto da ponta não fica cortado
+  const rets=[...groupBy(ps,p=>p.retiro)].sort((a,b)=>a[0].localeCompare(b[0]));
+  return `<div class="strip">`+rets.map(([r,g])=>`<div class="sp-l"><span class="hb-n">${esc(r)}</span><span class="sp-t"><i class="sp-band" style="left:${x(-tol)};width:calc(${x(tol)} - ${x(-tol)})"></i><i class="sp-zero" style="left:50%"></i>${
+      g.map(p=>{const d=p.cons/p.meta-1;return `<i class="sp-d" data-k="${esc(p.chave)}" role="button" tabindex="0" style="left:${x(d)};background:var(--${stCls(p.status)})" title="Pasto ${esc(p.pasto)}: ${f3(p.cons)} kg/cab/dia, meta ${f3(p.meta)} (${d>0?"+":""}${pc(d)})${Math.abs(d)>lim?" · fora da escala":""}"></i>`;}).join("")}</span><span class="hb-v num">${g.length}</span></div>`).join("")
+    +`<div class="sp-l"><span></span><span class="sp-ax">${[[-0.6,"≤ −60%"],[-0.3,"−30%"],[0,"meta"],[0.3,"+30%"],[0.6,"≥ +60%"]].map(([v,t],i)=>`<span style="left:${x(v)};transform:translateX(${i===0?"0":i===4?"-100%":"-50%"})">${t}</span>`).join("")}</span><span></span></div></div>`
+    +legSt([["ok","Dentro da meta"],["high","Acima do limite"],["low","Abaixo do limite"],["band","Faixa de tolerância"]]);
+}
+// mesmo mês, anos diferentes: uma linha por ano; o ano mais recente em destaque, os anteriores em cinza
+function yoyChart(rowsH){
+  const anos=[...new Set(rowsH.map(r=>r.ano))].sort();if(!anos.length)return vazio();
+  const meses=[...new Set(rowsH.map(r=>r.mesNum))].sort((a,b)=>a-b);const by=groupBy(rowsH,r=>r.mesNum+"|"+r.ano);
+  const ser=anos.map(a=>({a,pts:meses.map(m=>{const g=by.get(m+"|"+a);return g?agg(g).cons:null;})}));
+  const vals=ser.flatMap(x=>x.pts).filter(v=>v!=null);if(!vals.length)return vazio();
+  const W=900,H=260,L=46,Rm=56,T=14,B=30,xs=i=>L+(meses.length===1?(W-L-Rm)/2:i*(W-L-Rm)/(meses.length-1)),ymax=Math.max(...vals)*1.15,ys=v=>T+(H-T-B)*(1-v/ymax);
+  const step=niceStep(ymax/4);let g="";for(let v=0;v<=ymax;v+=step)g+=`<line class="axis" x1="${L}" x2="${W-Rm}" y1="${ys(v)}" y2="${ys(v)}"/><text x="${L-6}" y="${ys(v)+4}" text-anchor="end">${nf(step<0.1?2:1).format(v)}</text>`;
+  const ult=anos[anos.length-1];let lines="";
+  ser.forEach((sr,si)=>{const dest=sr.a===ult,cor=dest?"var(--accent)":"var(--none)",op=dest?1:0.45+0.4*si/Math.max(1,anos.length-1);
+    const segs=[];let cur=[];sr.pts.forEach((v,i)=>{if(v==null){if(cur.length)segs.push(cur);cur=[];}else cur.push(`${xs(i)},${ys(v)}`);});if(cur.length)segs.push(cur);
+    lines+=segs.map(sg=>`<path d="M${sg.join("L")}" fill="none" stroke="${cor}" stroke-width="${dest?2.5:2}" opacity="${op}"/>`).join("");
+    lines+=sr.pts.map((v,i)=>v==null?"":`<circle cx="${xs(i)}" cy="${ys(v)}" r="${dest?4.5:3.5}" fill="${cor}" opacity="${op}" stroke="var(--surface)" stroke-width="2"><title>${MESES[meses[i]-1]}/${sr.a}: ${f3(v)} kg/cab/dia</title></circle>`).join("");
+    const li=sr.pts.map((v,i)=>v==null?-1:i).filter(i=>i>=0).pop();if(li!=null&&li>=0)lines+=`<text x="${xs(li)+8}" y="${ys(sr.pts[li])+4}" style="fill:var(--ink);font-weight:${dest?600:400}">${sr.a}</text>`;});
+  const lbl=meses.map((m,i)=>`<text x="${xs(i)}" y="${H-B+18}" text-anchor="middle">${MESES[m-1].slice(0,3)}</text>`).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Consumo por mês, uma linha por ano">${g}${lines}${lbl}</svg>`+
+    `<div class="legend g-leg"><span><i style="background:var(--accent)"></i>${ult} (mais recente)</span>${anos.length>1?`<span><i style="background:var(--none)"></i>Anos anteriores</span>`:""}<span>kg/cab/dia</span></div>`;
+}
+// colunas lado a lado por mês: saída de fábrica (cinza) × fornecido (cor)
+function colPares(itens){
+  if(!itens.length||!itens.some(i=>i.a||i.b))return vazio();
+  const W=900,H=240,L=46,Rm=10,T=14,B=30,n=itens.length,bw=(W-L-Rm)/n,mx=Math.max(...itens.flatMap(i=>[i.a,i.b]))*1.12||1,ys=v=>T+(H-T-B)*(1-v/mx);
+  const step=niceStep(mx/4);let g="";for(let v=0;v<=mx;v+=step)g+=`<line class="axis" x1="${L}" x2="${W-Rm}" y1="${ys(v)}" y2="${ys(v)}"/><text x="${L-6}" y="${ys(v)+4}" text-anchor="end">${f0(v)}</text>`;
+  const w=Math.min(26,bw*0.36);
+  const bars=itens.map((i,k)=>{const cx=L+k*bw+bw/2;const r=(v,x,c,t)=>v>0?`<rect x="${x}" y="${ys(v)}" width="${w}" height="${ys(0)-ys(v)}" rx="3" fill="${c}"><title>${esc(i.full)} · ${t}: ${f0(v)} sacos</title></rect>`:"";
+    return r(i.a,cx-w-1,"var(--none)","Saída de fábrica")+r(i.b,cx+1,"var(--accent)","Fornecido")+(n<=14||k%2===0?`<text x="${cx}" y="${H-B+18}" text-anchor="middle">${esc(i.l)}</text>`:"");}).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Saída de fábrica e fornecido por mês">${g}${bars}</svg>`+
+    `<div class="legend g-leg"><span><i style="background:var(--none)"></i>Saída de fábrica</span><span><i style="background:var(--accent)"></i>Fornecido no cocho</span><span>sacos</span></div>`;
+}
+function ligarCliques(id,fn){document.querySelectorAll(`#${id} [data-k]`).forEach(el=>{el.onclick=()=>fn(el.dataset.k);el.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();fn(el.dataset.k);}};});}
+
+function renderGraficos(rows,P){
+  const rowsH=filtered({ignoreMes:true});const curto=g=>g[0].mes.slice(0,3)+"/"+String(g[0].ano).slice(2);
+  // Relatório
+  const porRet=[...groupBy(rows,r=>r.retiro)];
+  $("#gRelAn").innerHTML=hbars(porRet.map(([k,g])=>({l:k,v:animaisSup(g)})).sort((a,b)=>b.v-a.v),{fmt:f0});
+  $("#gRelSt").innerHTML=stack100(porRet.sort((a,b)=>a[0].localeCompare(b[0])).map(([k,g])=>{const pp=pastosAgg(g),n={};for(const [st] of ST_SEG)n[st]=pp.filter(p=>p.status===st).length;return {l:k,n,tot:n.Dentro+n.Acima+n.Abaixo};}));
+  $("#gRelCat").innerHTML=bullets([...groupBy(rows,r=>r.catP||"(sem categoria)")].map(([c,g])=>Object.assign({nome:c},agg(g))).filter(x=>x.cons!=null).sort((a,b)=>natural(a.nome,b.nome)));
+  $("#gRelProd").innerHTML=hbars([...groupBy(rows,r=>r.tipo||"(sem produto)")].map(([t,g])=>({l:t,v:sum(g,r=>r.sacos),sub:f0(sum(g,r=>r.kg))+" kg"})).sort((a,b)=>b.v-a.v),{fmt:f0});
+  // Pastos
+  $("#gStrip").innerHTML=stripPlot(P);ligarCliques("gStrip",showPasto);
+  const dv=P.filter(p=>p.cons!=null&&p.meta>0).map(p=>({p,d:p.cons/p.meta-1}));
+  const it=(l,cls)=>l.map(({p,d})=>({l:`${p.retiro} · ${p.pasto}`,v:Math.abs(d),k:p.chave,cls,sub:`${f3(p.cons)} × ${f3(p.meta)}`,tip:`${p.retiro} · pasto ${p.pasto}: ${f3(p.cons)} kg/cab/dia, meta ${f3(p.meta)}`}));
+  $("#gHigh").innerHTML=hbars(it(dv.filter(x=>x.p.status==="Acima").sort((a,b)=>b.d-a.d).slice(0,10),"high"),{fmt:v=>"+"+pc(v)});
+  $("#gLow").innerHTML=hbars(it(dv.filter(x=>x.p.status==="Abaixo").sort((a,b)=>a.d-b.d).slice(0,10),"low"),{fmt:v=>"−"+pc(v)});
+  ligarCliques("gHigh",showPasto);ligarCliques("gLow",showPasto);
+  // Histórico
+  $("#gYoy").innerHTML=yoyChart(rowsH);
+  const cvs=P.map(p=>{const c=p.rows.filter(r=>r.cons!=null).map(r=>r.cons);if(c.length<3)return null;const m=c.reduce((a,b)=>a+b,0)/c.length;const sd=Math.sqrt(c.reduce((a,b)=>a+(b-m)**2,0)/c.length);return m?{p,cv:sd/m,n:c.length}:null;}).filter(Boolean).sort((a,b)=>b.cv-a.cv).slice(0,12);
+  $("#gCv").innerHTML=hbars(cvs.map(x=>({l:`${x.p.retiro} · ${x.p.pasto}`,v:x.cv,k:x.p.chave,sub:x.n+" tratos"})),{fmt:v=>pc(v)});ligarCliques("gCv",showPasto);
+  // Logística
+  const mesesL=[...groupBy(rows,r=>r.mesKey)].sort((a,b)=>a[0]-b[0]).map(([k,g])=>({l:curto(g),full:g[0].mes,a:saidaFabrica(g),b:sum(g,r=>r.sacos)}));
+  $("#gSaida").innerHTML=colPares(mesesL);
+  $("#gRazao").innerHTML=hbars(porRet.map(([k,g])=>{const sf=saidaFabrica(g),f=sum(g,r=>r.sacos),r=div(f,sf);return {l:k,v:r,cls:r==null?"none":r>1.1?"high":r<0.9?"low":"ok",sub:`${f0(f)} de ${f0(sf)}`};}).filter(i=>i.v!=null).sort((a,b)=>b.v-a.v),
+    {fmt:v=>pc(v),band:[0.9,1.1],ref:1,legend:legSt([["ok","Entre 90% e 110%"],["high","Acima de 110%"],["low","Abaixo de 90%"]])});
+  const pv=previsao(rows);
+  $("#gPrev").innerHTML=hbars([...groupBy(pv.linhas,l=>l.ret)].map(([r,ls])=>({l:r,v:sum(ls,l=>l.sacos),tip:`${r}: `+ls.map(l=>`${l.tipo} ${f0(l.sacos)}`).join(", "),sub:ls.length>1?ls.length+" produtos":ls[0].tipo})).sort((a,b)=>b.v-a.v),{fmt:v=>f0(v)+" sacos"});
+  // Auditoria
+  const tipos=new Map();for(const r of rows)for(const al of r.alertas)tipos.set(al,(tipos.get(al)||0)+1);
+  $("#gAlTipo").innerHTML=hbars([...tipos].sort((a,b)=>b[1]-a[1]).map(([t,n])=>({l:t,v:n,k:t})),{fmt:f0});
+  ligarCliques("gAlTipo",t=>{const fa=$("#fAlert");fa.value=fa.value===t?"":t;render();$("#aud").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"});});
+  $("#gAlRet").innerHTML=hbars(porRet.map(([k,g])=>{const n=g.filter(r=>r.alertas.length).length;return {l:k,v:n,sub:pc(div(n,g.length))};}).filter(i=>i.v>0).sort((a,b)=>b.v-a.v),{fmt:f0});
+  $("#gAlMes").innerHTML=barChart([...groupBy(rows,r=>r.mesKey)].sort((a,b)=>a[0]-b[0]).map(([k,g])=>({l:curto(g),full:g[0].mes,v:g.filter(r=>r.alertas.length).length})),f0);
+}
+
 /* ======================= RENDER ======================= */
 function render(){
   const rows=filtered();const a=agg(rows);const P=pastosAgg(rows);
@@ -771,7 +1002,7 @@ function render(){
   document.getElementById("aud").innerHTML=table([{t:"Arquivo",f:r=>esc(r.arquivo)},{t:"Retiro",f:r=>esc(r.retiro)},{t:"Pasto",f:r=>`<b>${esc(r.pasto)}</b>`},{t:"Data",f:r=>dt(r.data)},{t:"Sacos",n:1,f:r=>f0(r.sacos)},{t:"Cabeças",n:1,f:r=>f0(r.qtd)},
     {t:"Dias",n:1,f:r=>r.dias??"–"},{t:"Consumo",n:1,f:r=>f3(r.cons)},{t:"Alertas",f:r=>r.alertas.map(esc).join("<br>")}],audRows,{click:1,key:r=>r.chave})
     +(alertas>500?`<p class="small">Mostrando os 500 mais recentes. Use os filtros para ver os demais.</p>`:"");
-  bindRowClicks();
+  renderGraficos(rows,P);bindRowClicks();
 }
 function bindRowClicks(){document.querySelectorAll("tr.click").forEach(tr=>{const go=()=>showPasto(tr.dataset.k);tr.onclick=go;tr.onkeydown=e=>{if(e.key==="Enter")go();};});}
 function showPasto(k){
@@ -787,8 +1018,8 @@ function showPasto(k){
 }
 
 /* ======================= NAVEGAÇÃO ======================= */
-const VIEWS=["visao","lancamentos","relatorio","pastos","capatazes","tendencia","logistica","auditoria","planilhas","ajustes","fazendas","pessoas"];
-const SEM_FILTRO=["lancamentos","planilhas","ajustes","fazendas","pessoas"];
+const VIEWS=["visao","lancamentos","formulas","relatorio","pastos","capatazes","tendencia","logistica","auditoria","planilhas","ajustes","fazendas","pessoas"];
+const SEM_FILTRO=["lancamentos","formulas","planilhas","ajustes","fazendas","pessoas"];
 function route(){let v=VIEWS.includes(location.hash.slice(1))?location.hash.slice(1):"visao";
   if((v==="fazendas"||v==="pessoas")&&!(USER&&USER.admin))v="visao";
   VIEWS.forEach(n=>document.getElementById("v-"+n).classList.toggle("on",n===v));
@@ -796,6 +1027,7 @@ function route(){let v=VIEWS.includes(location.hash.slice(1))?location.hash.slic
   document.querySelector(".filters").style.display=SEM_FILTRO.includes(v)?"none":"";
   if(v==="planilhas")renderPlanilhas();
   if(v==="lancamentos")renderLanc();
+  if(v==="formulas")renderFormulas();
   if(v==="fazendas")carregarFazendasAdm();
   if(v==="pessoas")carregarPessoas();
   if(v==="ajustes")carregarHistCfg();}
@@ -860,8 +1092,9 @@ function setDados(abas,src,lanc){
   for(const k in F)F[k]="";refreshFilters();render();
   if($("#v-planilhas").classList.contains("on"))renderPlanilhas();
   if($("#v-lancamentos").classList.contains("on"))renderLanc();
+  if($("#v-formulas").classList.contains("on"))renderFormulas();
 }
-function cfgDe(dados){return Object.assign(structuredClone(DEFAULT_CFG),dados||{});}
+function cfgDe(dados){if(!FM_SUJO)FM=null;return Object.assign(structuredClone(DEFAULT_CFG),dados||{});}
 
 /* ---------- login ---------- */
 $("#loginForm").addEventListener("submit",async e=>{
@@ -905,6 +1138,7 @@ $("#farmSel").onchange=e=>abrirFazenda(e.target.value);
 
 /* ---------- dados da fazenda: cópia do aparelho na hora, depois a versão do banco ---------- */
 async function abrirFazenda(fid){
+  if(FAZ!==fid){FM=null;FM_SUJO=false;$("#fmBarra").hidden=true;}
   FAZ=fid;LS.set("fazenda",fid);const nome=(FAZS.find(f=>f.id===fid)||{}).nome||fid;
   const cache=await IDB.get("faz:"+fid);
   if(cache){CFG=cfgDe(cache.config);CFG_INFO=cache;renderCfg();setDados(cache.abas||[],nome,cache.lancamentos||[]);msg("Atualizando…");}
@@ -1023,6 +1257,10 @@ const natural=(a,b)=>a.localeCompare(b,"pt-BR",{numeric:true});
 const retirosConhecidos=()=>[...new Set(RAW.map(r=>up(r.retiro)).filter(Boolean))].sort(natural);
 const pastosDo=ret=>[...ULT.keys()].filter(k=>k.startsWith(ret+"|")).map(k=>k.slice(ret.length+1)).sort(natural);
 function retiroEscolhido(){const v=$("#lcRet").value;return up(v==="__novo"?$("#lcRetNovo").value:v)||"";}
+const pressed=(el,on)=>el.setAttribute("aria-pressed",on?"true":"false");
+// tipos de sal: os mais usados nas planilhas primeiro; depois produtos dos Ajustes que ainda não apareceram
+function tiposConhecidos(){const n=new Map();for(const r of RAW)if(r.tipo)n.set(r.tipo,(n.get(r.tipo)||0)+1);
+  const l=[...n].sort((a,b)=>b[1]-a[1]).map(x=>x[0]);for(const p of CFG.produtos)if(p.chave&&!l.some(t=>produtoDe(t)===p))l.push(p.chave);return l;}
 // "1" encontra o pasto "01" já existente no retiro (e vice-versa), para não criar pasto duplicado.
 function resolverPasto(ret,txt){const t=up(txt)||"";if(!t)return "";const ps=pastosDo(ret);if(ps.includes(t))return t;
   const z=x=>x.replace(/^0+(?=.)/,"");return ps.find(p=>z(p)===z(t))||t;}
@@ -1032,45 +1270,74 @@ const opts=(l)=>l.map(v=>`<option value="${esc(v)}"></option>`).join("");
 
 function renderLanc(){
   ULT=ultimosTratos();
-  const rets=retirosConhecidos(),sel=$("#lcRet"),atual=sel.value||LS.get("lanc-ret");
-  sel.innerHTML=rets.map(r=>`<option value="${esc(r)}">${esc(r)}</option>`).join("")+`<option value="__novo">Outro retiro…</option>`;
+  const rets=retirosConhecidos(),atual=$("#lcRet").value||LS.get("lanc-ret");
   const digitado=atual==="__novo"&&$("#lcRetNovo").value.trim();   // "Outro retiro" só fica se a pessoa digitou um nome
-  sel.value=rets.includes(atual)?atual:digitado?"__novo":(rets[0]||"__novo");
-  $("#lcRetNovo").hidden=sel.value!=="__novo";
-  $("#lcTipos").innerHTML=opts([...new Set([...RAW.map(r=>r.tipo).filter(Boolean),...CFG.produtos.map(p=>p.chave).filter(Boolean)])].sort(natural));
+  $("#lcRet").value=rets.includes(atual)?atual:digitado?"__novo":(rets[0]||"__novo");
+  $("#lcRetChips").innerHTML=rets.map(r=>`<button type="button" class="chip" data-ret="${esc(r)}">${esc(r)}</button>`).join("")+`<button type="button" class="chip" data-ret="__novo">+ Outro</button>`;
+  $("#lcRetChips").querySelectorAll("[data-ret]").forEach(b=>b.onclick=()=>escolherRetiro(b.dataset.ret));
   $("#lcCats").innerHTML=opts([...new Set(RAW.map(r=>r.cat).filter(Boolean))].sort(natural));
   const hoje=diaLocal(),d=$("#lcData");d.max=hoje;d.min="2020-01-01";if(!d.value||d.value>hoje)d.value=hoje;
-  atualizarPastos();resumoLanc();renderLancLista();
+  renderTipos();atualizarPastos();resumoLanc();renderLancLista();
 }
-function atualizarPastos(){$("#lcPastos").innerHTML=opts(pastosDo(retiroEscolhido()));}
+function escolherRetiro(r){$("#lcRet").value=r;if(r!=="__novo")LS.set("lanc-ret",r);
+  $("#lcRetNovo").hidden=r!=="__novo";if(r==="__novo")$("#lcRetNovo").focus();
+  $("#lcPasto").value="";$("#lcUlt").textContent="";atualizarPastos();resumoLanc();}
+function renderTipos(){const t=tiposConhecidos();
+  $("#lcTipoChips").innerHTML=t.map(x=>`<button type="button" class="chip" data-tipo="${esc(x)}">${esc(x)}</button>`).join("")+`<button type="button" class="chip" id="lcTipoOutro">+ Outro</button>`;
+  $("#lcTipoChips").querySelectorAll("[data-tipo]").forEach(b=>b.onclick=()=>{$("#lcTipo").value=b.dataset.tipo;$("#lcTipo").hidden=true;resumoLanc();});
+  $("#lcTipoOutro").onclick=()=>{const i=$("#lcTipo");i.value="";i.hidden=false;i.focus();resumoLanc();};}
+function atualizarPastos(){
+  const ps=pastosDo(retiroEscolhido()),f=up($("#lcPasto").value)||"",z=x=>x.replace(/^0+(?=.)/,"");
+  const vis=f?ps.filter(p=>p.startsWith(f)||z(p).startsWith(z(f))):ps;
+  $("#lcPastoChips").innerHTML=vis.map(p=>`<button type="button" class="chip" data-pasto="${esc(p)}">${esc(p)}</button>`).join("")||
+    (ps.length&&f?`<span class="small">Nenhum pasto começa com "${esc(f)}": será um pasto novo.</span>`:"");
+  $("#lcPastoChips").querySelectorAll("[data-pasto]").forEach(b=>b.onclick=()=>{$("#lcPasto").value=b.dataset.pasto;preencherDoUltimo();atualizarPastos();resumoLanc();});
+}
+// marca o que está escolhido e quais etapas já estão completas
+function marcarLanc(l){
+  $("#lcRetChips").querySelectorAll("[data-ret]").forEach(b=>pressed(b,b.dataset.ret===$("#lcRet").value));
+  $("#lcPastoChips").querySelectorAll("[data-pasto]").forEach(b=>pressed(b,b.dataset.pasto===l.pasto));
+  const tipoChip=[...$("#lcTipoChips").querySelectorAll("[data-tipo]")].some(b=>b.dataset.tipo===l.tipo);
+  $("#lcTipoChips").querySelectorAll("[data-tipo]").forEach(b=>pressed(b,b.dataset.tipo===l.tipo));
+  if(l.tipo&&!tipoChip)$("#lcTipo").hidden=false;pressed($("#lcTipoOutro"),!$("#lcTipo").hidden);
+  let rapido=false;document.querySelectorAll("#lcForm [data-dia]").forEach(b=>{const on=l.data===diaLocal(+b.dataset.dia);rapido=rapido||on;pressed(b,on);});
+  pressed($("#lcOutraData"),!rapido);if(!rapido)$("#lcData").hidden=false;
+  const ok=[!!l.retiro,!!l.pasto,l.qtd>=1,!!l.tipo,l.sacos>0,!!l.data];
+  document.querySelectorAll("#lcForm .lc-passo").forEach((f,i)=>f.classList.toggle("feito",!!ok[i]));
+  $("#lcKg").textContent=l.sacos>0?`${fS(l.sacos)} saco(s) de ${pesoSacoDe(l.tipo)} kg = ${f0(l.sacos*pesoSacoDe(l.tipo))} kg`:"";
+}
 function preencherDoUltimo(){
   const ret=retiroEscolhido(),pasto=resolverPasto(ret,$("#lcPasto").value),u=pasto&&ULT.get(ret+"|"+pasto);
   if(!pasto){$("#lcUlt").textContent="";return;}
-  if(!u){$("#lcUlt").innerHTML=`<b>Pasto novo</b> neste retiro: preencha animais e tipo de sal.`;return;}
+  if(!u){$("#lcUlt").innerHTML=`<b>Pasto novo</b> neste retiro: informe animais e tipo de sal.`;return;}
   $("#lcQtd").value=u.qtd||"";$("#lcTipo").value=u.tipo||"";$("#lcPeso").value=u.peso||"";$("#lcCat").value=u.cat||"";
-  $("#lcUlt").innerHTML=`Último trato: <b>${dt(u.data)}</b> · ${f0(u.qtd)} animais · ${esc(u.tipo||"sem tipo")} · ${fS(u.sacos)} saco(s)${u.peso?` · ${f0(u.peso)} kg`:""}${u.cat?` · ${esc(u.cat)}`:""}${u.manual?" (lançado no app)":""}`;
+  $("#lcUlt").innerHTML=`Último trato em <b>${dt(u.data)}</b>: ${f0(u.qtd)} animais · ${esc(u.tipo||"sem tipo")} · ${fS(u.sacos)} saco(s)${u.manual?" (lançado no app)":""}`;
 }
 function lerLanc(){const ret=retiroEscolhido();
   return {retiro:ret,pasto:resolverPasto(ret,$("#lcPasto").value),data:$("#lcData").value,qtd:toNum($("#lcQtd").value),tipo:up($("#lcTipo").value)||"",
     sacos:toNum($("#lcSacos").value),peso:toNum($("#lcPeso").value),cat:up($("#lcCat").value)};}
 function problemaLanc(l){
-  if(!l.retiro)return "Escolha o retiro.";if(!l.pasto)return "Informe o número do pasto.";
-  if(!(l.qtd>=1)||!Number.isInteger(l.qtd))return "Informe o número de animais (número inteiro, 1 ou mais).";
-  if(!l.tipo)return "Informe o tipo de sal.";if(!(l.sacos>0))return "Informe quantos sacos foram fornecidos.";
-  if(!l.data)return "Informe a data.";if(l.data>diaLocal())return "A data não pode ser no futuro.";if(l.data<"2020-01-01")return "Data anterior a 2020: confira o ano.";
+  if(!l.retiro)return "1. Escolha o retiro.";if(!l.pasto)return "2. Informe o número do pasto.";
+  if(!(l.qtd>=1)||!Number.isInteger(l.qtd))return "3. Informe o número de animais (número inteiro, 1 ou mais).";
+  if(!l.tipo)return "4. Escolha o tipo de sal.";if(!(l.sacos>0))return "5. Informe quantos sacos foram fornecidos.";
+  if(!l.data)return "6. Informe a data.";if(l.data>diaLocal())return "A data não pode ser no futuro.";if(l.data<"2020-01-01")return "Data anterior a 2020: confira o ano.";
   if(l.peso!=null&&(l.peso<20||l.peso>1500))return "Peso fora do normal (20 a 1500 kg).";return null;}
-function resumoLanc(){const l=lerLanc();
+function resumoLanc(){const l=lerLanc();marcarLanc(l);
   if(!l.pasto||!(l.sacos>0)){$("#lcResumo").innerHTML="";return;}
   const kg=l.sacos*pesoSacoDe(l.tipo),ja=LANC.concat(fila()).some(x=>chaveTrato(x.retiro,x.pasto,ymdDe(x))===chaveTrato(l.retiro,l.pasto,l.data));
-  $("#lcResumo").innerHTML=`<b>${esc(l.retiro)} · Pasto ${esc(l.pasto)}</b><br>${l.qtd?f0(l.qtd):"?"} animais · ${esc(l.tipo||"?")}<br>${fS(l.sacos)} saco(s) = <b>${f0(kg)} kg</b> · ${l.data?dtS(l.data):"?"}${l.data===diaLocal()?" (hoje)":""}`+
+  const quando=l.data===diaLocal()?"hoje":l.data===diaLocal(1)?"ontem":l.data===diaLocal(2)?"anteontem":"";
+  $("#lcResumo").innerHTML=`<span class="rp">${esc(l.retiro)} · Pasto ${esc(l.pasto)}</span>${l.qtd?f0(l.qtd):"?"} animais · ${esc(l.tipo||"?")}<br>${fS(l.sacos)} saco(s) = <b>${f0(kg)} kg</b> · ${l.data?dtS(l.data):"?"}${quando?` (${quando})`:""}`+
     (ja?`<br><span class="pill p-low">Já há lançamento deste pasto neste dia: vai corrigir</span>`:"");
 }
-$("#lcRet").onchange=()=>{$("#lcRetNovo").hidden=$("#lcRet").value!=="__novo";if($("#lcRet").value!=="__novo")LS.set("lanc-ret",$("#lcRet").value);atualizarPastos();preencherDoUltimo();resumoLanc();};
+$("#lcRetNovo").addEventListener("input",()=>{atualizarPastos();resumoLanc();});
+$("#lcPasto").addEventListener("input",()=>{if(ULT.has(retiroEscolhido()+"|"+resolverPasto(retiroEscolhido(),$("#lcPasto").value)))preencherDoUltimo();else $("#lcUlt").textContent="";atualizarPastos();resumoLanc();});
 $("#lcPasto").addEventListener("change",()=>{preencherDoUltimo();resumoLanc();});
-$("#lcPasto").addEventListener("input",()=>{if(ULT.has(retiroEscolhido()+"|"+resolverPasto(retiroEscolhido(),$("#lcPasto").value)))preencherDoUltimo();resumoLanc();});
-for(const id of ["lcRetNovo","lcQtd","lcTipo","lcSacos","lcPeso","lcCat"])$("#"+id).addEventListener("input",resumoLanc);
+for(const id of ["lcQtd","lcTipo","lcSacos","lcPeso","lcCat"])$("#"+id).addEventListener("input",resumoLanc);
+document.querySelectorAll("#lcForm [data-st]").forEach(b=>b.onclick=()=>{const i=$("#"+b.dataset.st),mn=+i.min||0;
+  const v=Math.max(mn,Math.round(((toNum(i.value)||0)+(+b.dataset.d))*2)/2);i.value=b.dataset.st==="lcQtd"?Math.max(1,Math.round(v)):v;resumoLanc();});
 $("#lcData").addEventListener("change",()=>{const d=$("#lcData"),h=diaLocal();if(d.value>h){d.value=h;$("#lcMsg").textContent="A data não pode ser no futuro: voltei para hoje.";}else if(/futuro/.test($("#lcMsg").textContent))$("#lcMsg").textContent="";resumoLanc();});
-document.querySelectorAll("#lcForm [data-dia]").forEach(b=>b.onclick=()=>{$("#lcData").value=diaLocal(+b.dataset.dia);resumoLanc();});
+document.querySelectorAll("#lcForm [data-dia]").forEach(b=>b.onclick=()=>{$("#lcData").value=diaLocal(+b.dataset.dia);$("#lcData").hidden=true;resumoLanc();});
+$("#lcOutraData").onclick=()=>{const d=$("#lcData");d.hidden=false;d.focus();try{d.showPicker&&d.showPicker();}catch(e){}};
 
 // Consumo do trato anterior do mesmo pasto, que este lançamento acabou de fechar.
 function consumoFechado(l){const t=Date.UTC(...l.data.split("-").map((v,i)=>i===1?v-1:+v));
@@ -1098,10 +1365,10 @@ $("#lcForm").addEventListener("submit",async e=>{e.preventDefault();
       const base=SRC==="Exemplo fictício"?[]:ABAS;if(SRC==="Exemplo fictício")LANC=[];
       LANC=LANC.filter(x=>chaveTrato(x.retiro,x.pasto,ymdDe(x))!==k).concat([Object.assign({},l,{uid:"l"+Date.now(),autor,criado_em:new Date().toISOString()})]);
       await IDB.set("local-lanc",LANC);setDados(base,"Planilhas deste aparelho");txt="Lançado neste aparelho.";}
-    if(l.retiro!==$("#lcRet").value){LS.set("lanc-ret",l.retiro);renderLanc();}
+    if(l.retiro!==$("#lcRet").value){LS.set("lanc-ret",l.retiro);$("#lcRet").value=l.retiro;$("#lcRetNovo").value="";$("#lcRetNovo").hidden=true;renderLanc();}
     $("#lcMsg").innerHTML=esc(txt)+consumoFechado(l);toast(txt);
     for(const id of ["lcPasto","lcQtd","lcSacos","lcPeso","lcCat"])$("#"+id).value="";
-    $("#lcUlt").textContent="";resumoLanc();$("#lcPasto").focus();
+    $("#lcUlt").textContent="";atualizarPastos();resumoLanc();$("#lcPasto").focus();
   }catch(err){$("#lcMsg").textContent=err.message;}
   finally{btn.disabled=false;}
 });
@@ -1129,11 +1396,14 @@ function renderLancLista(){
   $("#lcFila").innerHTML=(pend?`<b>${pend} lançamento(s) esperando internet</b> neste aparelho. Eles já aparecem nas contas e serão enviados sozinhos quando a conexão voltar. `:"")+
     (rec?`<b>${rec} lançamento(s) recusado(s) pelo banco</b>: veja o motivo abaixo, corrija lançando de novo e descarte o recusado.`:"");
   $("#lcConta").textContent=l.length?`${f0(l.length)} lançamento(s)${l.length>200?" · mostrando os 200 mais recentes":""}`:"";
-  const sit=x=>x.erro?`<span class="pill p-high">Recusado</span><br><span class="small">${esc(x.erro)}</span>`:x.pendente?`<span class="pill p-low">Esperando internet</span>`
+  const sit=x=>x.erro?`<span class="pill p-high" title="${esc(x.erro)}">Recusado</span><span class="small">${esc(x.erro)}</span>`:x.pendente?`<span class="pill p-low">Esperando internet</span>`
     :naPl.has(chaveTrato(x.retiro,x.pasto,ymdDe(x)))?`<span class="pill p-none">Já está na planilha</span>`:`<span class="pill p-ok">Na conta</span>`;
   const acao=x=>x.pendente?`<button class="btn" data-descartar="${esc(x.uid)}">Descartar</button>`:podeApagar?`<button class="btn" data-apagarl="${esc(String(x.id??x.uid))}">Apagar</button>`:"";
-  $("#lcLista").innerHTML=l.length?table([{t:"Data",f:x=>dtS(ymdDe(x))},{t:"Retiro",f:x=>esc(x.retiro)},{t:"Pasto",f:x=>`<b>${esc(x.pasto)}</b>`},{t:"Animais",n:1,f:x=>f0(+x.qtd)},
-      {t:"Tipo de sal",f:x=>esc(x.tipo)},{t:"Sacos",n:1,f:x=>fS(+x.sacos)},{t:"Lançado por",f:x=>esc(x.autor||"–")},{t:"Situação",f:sit},{t:"",f:acao}],l.slice(0,200))
+  const DS=["dom","seg","ter","qua","qui","sex","sáb"];
+  $("#lcLista").innerHTML=l.length?l.slice(0,200).map(x=>{const d=ymdDe(x),dd=new Date(d+"T12:00:00");
+    return `<div class="lc-item"><div class="lc-dia">${d.slice(8,10)}/${d.slice(5,7)}<small>${DS[dd.getDay()]}</small></div>
+      <div class="lc-txt"><b>${esc(x.retiro)} · Pasto ${esc(x.pasto)}</b><span class="small">${f0(+x.qtd)} animais · ${esc(x.tipo)} · <b>${fS(+x.sacos)} saco(s)</b>${x.autor?` · ${esc(x.autor)}`:""}</span></div>
+      <div class="lc-acao">${sit(x)}${acao(x)}</div></div>`;}).join("")
     :`<div class="empty">Nenhum trato lançado pelo app ainda.</div>`;
   document.querySelectorAll("[data-descartar]").forEach(b=>b.onclick=()=>confirmar(b,"Descartar",()=>{setFila(fila().filter(x=>x.uid!==b.dataset.descartar));setDados(ABAS,SRC);toast("Lançamento descartado.");}));
   document.querySelectorAll("[data-apagarl]").forEach(b=>b.onclick=()=>confirmar(b,"Apagar",()=>apagarLanc(b.dataset.apagarl)));
@@ -1148,6 +1418,107 @@ async function apagarLanc(idTxt){
     LANC=LANC.filter(v=>v!==x);const c=await IDB.get("faz:"+FAZ);if(c){c.lancamentos=LANC;await IDB.set("faz:"+FAZ,c);}setDados(ABAS,SRC);}
   else{LANC=LANC.filter(v=>v!==x);await IDB.set("local-lanc",LANC);if(ABAS.length||LANC.length)setDados(ABAS,SRC);else loadDemo();toast("Lançamento apagado deste aparelho.");}
 }
+
+
+/* ======================= FÓRMULAS E BATIDAS ======================= */
+// Rascunho editado na tela; só vai para os Ajustes da fazenda (banco) ao clicar em Salvar.
+const podeFm=()=>!ONLINE||!!(USER&&USER.editor);
+const novoId=p=>p+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+function fmCarregar(force){if(force||!FM||!FM_SUJO){FM={insumos:structuredClone(CFG.insumos||[]),formulas:structuredClone(CFG.formulas||[])};FM_SUJO=false;}}
+function fmSujar(){FM_SUJO=true;$("#fmBarra").hidden=!podeFm();}
+function renderFormulas(){
+  fmCarregar();const ed=podeFm();
+  $("#v-formulas").classList.toggle("ro",!ed);document.querySelectorAll("#v-formulas .fm-ed").forEach(e=>e.hidden=!ed);$("#fmBarra").hidden=!(ed&&FM_SUJO);
+  $("#fmAviso").hidden=ed;$("#fmAviso").textContent=ed?"":"Somente técnicos e administradores alteram fórmulas e preços.";
+  // insumos
+  const ins=FM.insumos;
+  $("#fmIns").innerHTML=`<thead><tr><th>Insumo</th><th class="n">Embalagem (kg)</th><th class="n">Preço da embalagem (R$)</th><th class="n">R$/kg</th><th>Preço de</th>${ed?"<th></th>":""}</tr></thead><tbody>`+
+    (ins.length?ins.map((i,k)=>`<tr data-i="${k}"><td><input data-f="nome" value="${esc(i.nome)}" placeholder="ex.: Ureia" aria-label="Nome do insumo ${k+1}"></td>
+      <td class="n"><input class="fm-n" data-f="emb" type="number" min="0" step="0.1" value="${i.emb??""}" aria-label="Embalagem em kg"></td>
+      <td class="n"><input class="fm-n" data-f="preco" type="number" min="0" step="0.01" value="${i.preco??""}" aria-label="Preço da embalagem"></td>
+      <td class="n num" data-calc="rk">${insKg(i)==null?"–":brl(insKg(i))}</td><td class="small">${i.em?dtS(i.em):"–"}</td>
+      ${ed?`<td><button class="btn" data-delins="${k}">Remover</button></td>`:""}</tr>`).join(""):`<tr><td colspan="6"><div class="empty">Nenhum insumo cadastrado.${ed?" Clique em Adicionar insumo.":""}</div></td></tr>`)+"</tbody>";
+  // fórmulas
+  const opIns=(sel)=>`<option value="">Escolha…</option>`+ins.map(i=>`<option value="${esc(i.id)}"${i.id===sel?" selected":""}>${esc(i.nome||"(sem nome)")}</option>`).join("");
+  const opProd=(sel)=>`<option value="">Não ligada</option>`+CFG.produtos.map(p=>`<option value="${esc(p.chave)}"${p.chave===sel?" selected":""}>${esc(p.chave)}</option>`).join("");
+  $("#fmLista").innerHTML=FM.formulas.length?FM.formulas.map((f,k)=>{const c=calcFormula(f,ins),m=new Map(ins.map(i=>[i.id,i]));
+    const prod=CFG.produtos.find(p=>p.chave===f.produto),saco=prod?prod.saco:30,dup=f.produto&&FM.formulas.findIndex(x=>x.produto===f.produto)!==k;
+    return `<div class="card fm-card" data-fm="${k}">
+      <div class="fm-top"><div class="field"><label>Nome da fórmula</label><input data-f="nome" value="${esc(f.nome)}" placeholder="ex.: Proteinado 0,2%"></div>
+        <div class="field"><label>Produto (tipo de sal) ligado</label><select data-f="produto">${opProd(f.produto)}</select></div></div>
+      ${dup?`<div class="notice warn">Outra fórmula já está ligada a ${esc(f.produto)}: só a primeira é usada no custo.</div>`:""}
+      <div class="scroll"><table class="cfg"><thead><tr><th>Insumo</th><th class="n">kg na batida</th><th class="n">% · custo</th>${ed?"<th></th>":""}</tr></thead><tbody>${
+        (f.itens||[]).map((it,j)=>{const pk=insKg(m.get(it.ins));return `<tr data-it="${j}"><td><select data-f="ins">${opIns(it.ins)}</select></td><td class="n"><input class="fm-n" data-f="kg" type="number" min="0" step="0.1" value="${it.kg??""}"></td>
+          <td class="n num">${c.kg?pc((+it.kg||0)/c.kg,1):"–"}<br><span class="small">${pk==null?(it.ins?'<span class="pill p-low">sem preço</span>':"–"):brl((+it.kg||0)*pk)}</span></td>${ed?`<td><button class="btn" data-delit="${j}" aria-label="Tirar insumo">×</button></td>`:""}</tr>`;}).join("")
+        ||`<tr><td colspan="4"><div class="empty">Nenhum insumo na fórmula.</div></td></tr>`}</tbody></table></div>
+      ${ed?`<div class="row" style="margin-top:8px"><button class="btn" data-addit>+ Insumo</button><button class="btn" data-delfm style="margin-left:auto">Excluir fórmula</button></div>`:""}
+      <div class="fm-tot"><div><span>Batida</span><b>${f0(c.kg)} kg</b></div><div><span>Custo da batida</span><b>${c.falta?"–":brl(c.custo)}</b></div>
+        <div><span>Custo por kg</span><b>${c.ckg==null?"–":brl(c.ckg)}</b></div><div><span>Saco de ${f0(saco)} kg</span><b>${c.ckg==null?"–":brl(c.ckg*saco)}</b></div></div>
+      ${c.falta?`<p class="small" style="margin-top:6px">${c.falta} insumo(s) sem preço: custo incompleto.</p>`:""}
+      <div class="field" style="margin-top:10px"><label>Observações (modo de preparo, ordem de mistura…)</label><textarea data-f="obs" rows="2" style="padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surface);font:inherit;color:inherit">${esc(f.obs||"")}</textarea></div>
+    </div>`;}).join(""):`<div class="card"><div class="empty">Nenhuma fórmula cadastrada.${ed?" Clique em Nova fórmula.":""}</div></div>`;
+  fmGraficos();
+}
+// planejamento: previsão de sacos do próximo mês (todos os dados) → kg → batidas → insumos
+function fmPlano(){
+  const pv=previsao(ALL),porF=new Map();
+  for(const l of pv.linhas){const p=produtoDe(l.tipo);const f=p&&FM.formulas.find(x=>x.produto===p.chave);const key=f?f.id:"(sem fórmula) "+(p?p.chave:l.tipo);
+    const o=porF.get(key)||{f,nome:f?f.nome||"(sem nome)":(p?p.chave:l.tipo),sacos:0,kg:0};o.sacos+=l.sacos;o.kg+=l.sacos*(p?p.saco:30);porF.set(key,o);}
+  const pl=[...porF.values()].map(o=>{const c=o.f?calcFormula(o.f,FM.insumos):null;return Object.assign(o,{batKg:c?c.kg:0,bat:c&&c.kg>0?Math.ceil(o.kg/c.kg):null,custo:c&&c.ckg!=null?o.kg*c.ckg:null});});
+  return {mes:pv.mes,pl};
+}
+function fmGraficos(){
+  const cs=FM.formulas.map(f=>({f,c:calcFormula(f,FM.insumos)})).filter(x=>x.c.ckg!=null);
+  $("#gFmCusto").innerHTML=hbars(cs.map(({f,c})=>({l:f.nome||"(sem nome)",v:c.ckg,sub:f.produto?"→ "+f.produto:"não ligada"})).sort((a,b)=>b.v-a.v),{fmt:v=>brl(v)+"/kg"});
+  const {mes,pl}=fmPlano();
+  $("#fmPlanNote").textContent=mes?`Previsão de ${mes} (aba Logística), convertida em batidas. Produtos sem fórmula ligada aparecem em cinza.`:"Sem dados para prever o próximo mês.";
+  $("#gFmPlan").innerHTML=hbars(pl.sort((a,b)=>b.kg-a.kg).map(o=>({l:o.nome,v:o.kg,cls:o.f?"accent":"none",sub:o.bat!=null?`${f0(o.bat)} batida(s) de ${f0(o.batKg)} kg`:o.f?"fórmula vazia":"sem fórmula ligada",
+    tip:`${o.nome}: ${f0(o.sacos)} sacos = ${f0(o.kg)} kg${o.custo!=null?` · ${brl(o.custo)}`:""}`})),{fmt:v=>f0(v)+" kg"});
+  const tot=new Map(),m=new Map(FM.insumos.map(i=>[i.id,i]));
+  for(const o of pl)if(o.f&&o.bat)for(const it of o.f.itens||[]){const q=(+it.kg||0)*o.bat;if(!q||!it.ins)continue;const t=tot.get(it.ins)||{kg:0};t.kg+=q;tot.set(it.ins,t);}
+  const linhas=[...tot].map(([id,t])=>{const i=m.get(id)||{},pk=insKg(i);return {nome:i.nome||"(insumo apagado)",kg:t.kg,emb:i.emb>0?Math.ceil(t.kg/i.emb):null,embKg:i.emb,custo:pk!=null?t.kg*pk:null};}).sort((a,b)=>b.kg-a.kg);
+  $("#fmCompra").innerHTML=linhas.length?table([{t:"Insumo",f:r=>`<b>${esc(r.nome)}</b>`},{t:"kg",n:1,f:r=>f0(r.kg)},{t:"Embalagens",n:1,f:r=>r.emb==null?"–":`${f0(r.emb)} × ${f0(r.embKg)} kg`},{t:"Custo estimado",n:1,f:r=>r.custo==null?"–":brl(r.custo)}],linhas)
+    +`<p class="small">Total estimado: <b>${brl(sum(linhas,r=>r.custo))}</b>${linhas.some(r=>r.custo==null)?" (há insumos sem preço)":""}.</p>`
+    :vazio("Ligue as fórmulas aos produtos e cadastre os insumos para ver a compra do próximo mês.");
+}
+// edição (delegada)
+$("#v-formulas").addEventListener("input",e=>{const el=e.target,f=el.dataset.f;if(!f||!podeFm())return;fmCarregar();
+  const tr=el.closest("[data-i]"),card=el.closest("[data-fm]");
+  if(tr){const i=FM.insumos[+tr.dataset.i];i[f]=f==="nome"?el.value:toNum(el.value);if(f!=="nome")i.em=diaLocal();
+    const c=tr.querySelector('[data-calc="rk"]');if(c)c.textContent=insKg(i)==null?"–":brl(insKg(i));}
+  else if(card){const fm=FM.formulas[+card.dataset.fm],it=el.closest("[data-it]");
+    if(it){fm.itens[+it.dataset.it][f]=f==="kg"?toNum(el.value):el.value;}else fm[f]=el.value;}
+  fmSujar();});
+// redesenha depois que o foco já foi para o próximo campo e devolve o cursor a ele
+function fmFoco(){const a=document.activeElement;if(!a||!a.dataset||!a.dataset.f||!a.closest("#v-formulas"))return null;
+  return {f:a.dataset.f,i:a.closest("[data-i]")?.dataset.i,fm:a.closest("[data-fm]")?.dataset.fm,it:a.closest("[data-it]")?.dataset.it};}
+function fmVoltarFoco(k){if(!k)return;let base=$("#v-formulas");if(k.i!=null)base=base.querySelector(`[data-i="${k.i}"]`);else if(k.fm!=null)base=base.querySelector(`[data-fm="${k.fm}"]`);
+  if(base&&k.it!=null)base=base.querySelector(`[data-it="${k.it}"]`);const el=base&&base.querySelector(`[data-f="${k.f}"]`);if(el)el.focus();}
+$("#v-formulas").addEventListener("change",e=>{if(e.target.dataset.f&&podeFm())setTimeout(()=>{const k=fmFoco();renderFormulas();fmVoltarFoco(k);},0);});
+$("#v-formulas").addEventListener("click",e=>{const b=e.target.closest("button");if(!b||!podeFm())return;fmCarregar();const card=b.closest("[data-fm]");
+  if(b.id==="fmAddIns"){FM.insumos.push({id:novoId("i"),nome:"",emb:null,preco:null,em:diaLocal()});fmSujar();renderFormulas();const l=$("#fmIns tbody tr:last-child [data-f=nome]");l&&l.focus();}
+  else if(b.id==="fmAddForm"){FM.formulas.push({id:novoId("f"),nome:"",produto:"",itens:[{ins:"",kg:null}],obs:""});fmSujar();renderFormulas();const l=$("#fmLista .fm-card:last-child [data-f=nome]");l&&(l.focus(),l.scrollIntoView({block:"center"}));}
+  else if(b.dataset.delins!=null){const i=FM.insumos[+b.dataset.delins];const usado=FM.formulas.filter(f=>(f.itens||[]).some(it=>it.ins===i.id)).map(f=>f.nome||"(sem nome)");
+    if(usado.length&&b.dataset.ok!=="1"){b.dataset.ok="1";b.textContent="Usado em "+usado.length+" fórmula(s): confirmar";b.classList.add("primary");return;}
+    FM.insumos.splice(+b.dataset.delins,1);fmSujar();renderFormulas();}
+  else if(card&&b.hasAttribute("data-addit")){FM.formulas[+card.dataset.fm].itens.push({ins:"",kg:null});fmSujar();renderFormulas();}
+  else if(card&&b.dataset.delit!=null){FM.formulas[+card.dataset.fm].itens.splice(+b.dataset.delit,1);fmSujar();renderFormulas();}
+  else if(card&&b.hasAttribute("data-delfm")){if(b.dataset.ok!=="1"){b.dataset.ok="1";b.textContent="Confirmar exclusão";b.classList.add("primary");return;}
+    FM.formulas.splice(+card.dataset.fm,1);fmSujar();renderFormulas();}
+});
+$("#fmDesfazer").onclick=()=>{fmCarregar(true);renderFormulas();toast("Alterações desfeitas.");};
+$("#fmSalvar").onclick=async()=>{
+  const ins=FM.insumos.filter(i=>(i.nome||"").trim()).map(i=>Object.assign(i,{nome:i.nome.trim().toUpperCase()}));
+  const nomes=ins.map(i=>i.nome);if(new Set(nomes).size!==nomes.length){toast("Há insumos com o mesmo nome. Deixe cada nome único.");return;}
+  const ids=new Set(ins.map(i=>i.id));
+  const forms=FM.formulas.filter(f=>(f.nome||"").trim()||(f.itens||[]).some(it=>it.ins)).map(f=>Object.assign(f,{nome:(f.nome||"").trim(),itens:(f.itens||[]).filter(it=>it.ins&&ids.has(it.ins)&&+it.kg>0).map(it=>({ins:it.ins,kg:+it.kg}))}));
+  if(forms.some(f=>!f.nome)){toast("Dê um nome a cada fórmula.");return;}
+  const novo=Object.assign({},CFG,{insumos:ins,formulas:forms});
+  FM_SUJO=false;$("#fmBarra").hidden=true;
+  const ok=await salvarCfg(novo,ONLINE?"Fórmulas e preços salvos para todos desta fazenda.":"Fórmulas e preços salvos.");
+  if(!ok){FM_SUJO=true;$("#fmBarra").hidden=false;return;}            // não salvou: o rascunho continua na tela
+  fmCarregar(true);if($("#v-formulas").classList.contains("on"))renderFormulas();
+};
 
 /* ======================= EXPORTAR ======================= */
 function baseRows(){return filtered().map(r=>({Arquivo:r.arquivo,Retiro:r.retiro,Pasto:r.pasto,Ano:r.ano,"Mês":r.mes,"Período":r.periodo,"Data Fornecimento":dt(r.data),"Próximo Trato":dt(r.prox),
@@ -1165,7 +1536,7 @@ document.getElementById("export").onclick=async()=>{
 function renderCfg(){
   const t=document.getElementById("cfgProd");
   t.innerHTML=`<thead><tr><th>Texto no "Tipo de sal"</th><th class="n">% do peso vivo</th><th class="n">Peso do saco (kg)</th><th class="n">Preço R$/kg</th><th></th></tr></thead><tbody>`+
-    CFG.produtos.map((p,i)=>`<tr><td><input id="pc${i}" value="${esc(p.chave)}" aria-label="Texto do produto ${i+1}"></td><td><input id="pp${i}" type="number" step="0.01" min="0" value="${p.pv}" aria-label="% PV produto ${i+1}"></td><td><input id="ps${i}" type="number" step="1" min="1" value="${p.saco}" aria-label="Peso do saco produto ${i+1}"></td><td><input id="pr${i}" type="number" step="0.01" min="0" value="${p.preco??""}" placeholder="–" aria-label="Preço produto ${i+1}"></td><td><button class="btn editor-btn" data-del="${i}" aria-label="Remover produto ${i+1}">Remover</button></td></tr>`).join("")+"</tbody>";
+    CFG.produtos.map((p,i)=>{const fl=formulaDoProduto(p),ck=fl?calcFormula(fl).ckg:null;return `<tr><td><input id="pc${i}" value="${esc(p.chave)}" aria-label="Texto do produto ${i+1}"></td><td><input id="pp${i}" type="number" step="0.01" min="0" value="${p.pv}" aria-label="% PV produto ${i+1}"></td><td><input id="ps${i}" type="number" step="1" min="1" value="${p.saco}" aria-label="Peso do saco produto ${i+1}"></td><td>${ck!=null?`<input id="pr${i}" value="${nf(2).format(ck)}" disabled title="Custo da fórmula ${esc(fl.nome)}" aria-label="Preço do produto ${i+1} (da fórmula)"><span class="small"> fórmula</span>`:`<input id="pr${i}" type="number" step="0.01" min="0" value="${p.preco??""}" placeholder="–" aria-label="Preço produto ${i+1}">`}</td><td><button class="btn editor-btn" data-del="${i}" aria-label="Remover produto ${i+1}">Remover</button></td></tr>`;}).join("")+"</tbody>";
   t.querySelectorAll("[data-del]").forEach(b=>{b.hidden=ONLINE&&!(USER&&USER.editor);b.onclick=()=>{readCfg();CFG.produtos.splice(+b.dataset.del,1);renderCfg();};});
   document.getElementById("cfgRules").innerHTML=[
     ["cTol","Tolerância da meta (±%)",CFG.tolerancia],["cDias","Intervalo máximo entre tratos (dias)",CFG.diasMax],["cAlto","Alerta de consumo alto (× limite máx.)",CFG.fatorAlto],
@@ -1175,7 +1546,7 @@ function renderCfg(){
     +(USER&&!USER.editor?" Só técnicos e administradores alteram.":""):"Os ajustes ficam salvos neste aparelho.";
 }
 function readCfg(){
-  CFG.produtos=CFG.produtos.map((p,i)=>({chave:(document.getElementById("pc"+i)?.value||"").trim().toUpperCase(),pv:toNum(document.getElementById("pp"+i)?.value)??0,saco:toNum(document.getElementById("ps"+i)?.value)||30,preco:toNum(document.getElementById("pr"+i)?.value)}));
+  CFG.produtos=CFG.produtos.map((p,i)=>({chave:(document.getElementById("pc"+i)?.value||"").trim().toUpperCase(),pv:toNum(document.getElementById("pp"+i)?.value)??0,saco:toNum(document.getElementById("ps"+i)?.value)||30,preco:document.getElementById("pr"+i)?.disabled?p.preco:toNum(document.getElementById("pr"+i)?.value)}));
   const g=id=>toNum(document.getElementById(id)?.value);
   CFG.tolerancia=g("cTol")??25;CFG.diasMax=g("cDias")??30;CFG.fatorAlto=g("cAlto")??3;CFG.mudanca=g("cMud")??30;CFG.pesoUA=g("cUA")||450;
   CFG.mesesSeca=(document.getElementById("cSeca")?.value||"").split(/[^\d]+/).map(Number).filter(n=>n>=1&&n<=12);
@@ -1185,12 +1556,12 @@ async function salvarCfg(novo,txt){
   CFG=novo;
   if(ONLINE){try{const quando=await rpc("salvar_config",{p_token:SESSAO.token,p_fazenda:FAZ,p_dados:CFG});CFG_INFO=Object.assign({},CFG_INFO,{config:CFG,config_atualizado_em:quando,config_atualizado_por:USER.nome});
       const c=await IDB.get("faz:"+FAZ);if(c){c.config=CFG;c.config_atualizado_em=quando;c.config_atualizado_por=USER.nome;await IDB.set("faz:"+FAZ,c);}}
-    catch(e){if(e.cod==="sessao")return sessaoCaiu();toast(e.message);return;}}
+    catch(e){if(e.cod==="sessao"){sessaoCaiu();return false;}toast(e.message);return false;}}
   else saveCfg();
-  renderCfg();ALL=compute(RAW);refreshFilters();render();carregarHistCfg();toast(txt);
+  renderCfg();ALL=compute(RAW);refreshFilters();render();carregarHistCfg();toast(txt);return true;
 }
 document.getElementById("applyCfg").onclick=()=>{readCfg();CFG.produtos=CFG.produtos.filter(p=>p.chave);salvarCfg(CFG,ONLINE?"Ajustes salvos para todos os usuários desta fazenda.":"Ajustes salvos.");};
-document.getElementById("resetCfg").onclick=()=>salvarCfg(structuredClone(DEFAULT_CFG),"Ajustes padrão restaurados.");
+document.getElementById("resetCfg").onclick=()=>salvarCfg(Object.assign(structuredClone(DEFAULT_CFG),{insumos:CFG.insumos||[],formulas:CFG.formulas||[]}),"Ajustes padrão restaurados (fórmulas e insumos mantidos).");
 async function carregarHistCfg(){
   if(!(ONLINE&&USER&&USER.editor&&FAZ))return;
   try{const h=await rpc("historico_config",{p_token:SESSAO.token,p_fazenda:FAZ});

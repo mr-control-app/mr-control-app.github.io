@@ -76,19 +76,34 @@ a cada 3 dias sozinho. Para testar: **Actions → Manter ativo → Run workflow*
 ---
 
 ## Aba Lançamentos
-As planilhas são enviadas na aba **Planilhas** (botão **Lançar planilhas**). Aqui se lança o consumo trato a trato.
-- **Lançar consumo**: um trato por vez, pensado para o celular. Retiro → número do pasto → número de animais →
-  tipo de sal → sacos → data. Ao escolher o pasto, animais, tipo de sal, peso e categoria vêm do último trato
-  daquele pasto (dá para mudar). A data começa em **hoje** e só aceita datas passadas (o banco também recusa
-  data futura, no horário de Brasília). Antes de lançar aparece um resumo; depois, o consumo do trato anterior do
-  pasto, que o novo lançamento acabou de fechar.
-- **Quem lança**: administrador, técnico e equipe da fazenda (como no envio de planilhas). **Quem apaga**:
-  administrador e técnico. Tudo fica no registro (lançou / corrigiu / apagou lançamento).
+Tela centralizada, pensada para a equipe de campo no celular. As planilhas são enviadas na aba **Planilhas**.
+1. **Retiro**: toque no botão do retiro (ou "+ Outro").
+2. **Número do pasto**: toque no pasto (os pastos do retiro aparecem como botões; digitar filtra).
+   Animais, tipo de sal, peso e categoria vêm do último trato daquele pasto.
+3. **Número de animais** e 5. **Sacos**: número grande com botões − e +.
+4. **Tipo de sal**: toque no produto (ou "+ Outro").
+6. **Data**: Hoje, Ontem, Anteontem ou "Outra data" (só datas passadas; o banco também recusa data futura).
+
+Cada etapa fica verde quando preenchida; antes de lançar aparece um resumo e, depois, o consumo do trato anterior.
+- **Quem lança**: administrador, técnico e equipe da fazenda. **Quem apaga**: administrador e técnico (fica no registro).
 - **Mesmo pasto e dia** lançado de novo **corrige** o anterior (não duplica).
-- **Planilha x app**: se a planilha do mês trouxer o mesmo retiro, pasto e dia, vale a planilha e o lançamento do
-  app aparece como "Já está na planilha", sem contar em dobro. Reenviar a planilha não apaga lançamentos do app.
-- **Sem internet**: o lançamento fica guardado no aparelho, já entra nas contas e é enviado sozinho quando a
-  conexão volta. Ao clicar em Sair com algo pendente, o app avisa antes.
+- **Planilha x app**: se a planilha do mês trouxer o mesmo retiro, pasto e dia, vale a planilha ("Já está na planilha").
+- **Sem internet**: fica guardado no aparelho, já entra nas contas e é enviado sozinho quando a conexão volta.
+
+## Gráficos das abas de análise
+Relatório, Pastos, Histórico, Logística e Auditoria abrem com gráficos-resumo; as tabelas completas ficam no fim,
+em **Detalhamento**. Passe o mouse (ou toque) nas barras e pontos para ver os valores. Nos gráficos de pastos,
+tocar abre os tratos do pasto; em Auditoria, tocar num tipo de alerta filtra a tabela.
+
+## Aba Fórmulas e batidas
+- **Insumos e preços**: nome, peso da embalagem e preço pago nela; o app calcula o R$/kg e guarda a data do preço.
+- **Fórmulas**: cada fórmula é uma batida (kg de cada insumo). Mostra % de cada insumo, custo da batida, custo por kg
+  e custo do saco. Ligue a fórmula a um produto (tipo de sal) dos Ajustes: o custo dela passa a ser o preço desse
+  produto (aparece travado em Ajustes) e entra no custo da aba Logística.
+- **Planejamento de batidas**: a previsão de sacos do próximo mês vira kg e número de batidas de cada fórmula, e a
+  lista de **compra de insumos** (kg, embalagens e custo estimado).
+- Técnico e administrador editam e clicam em **Salvar fórmulas e preços**; a equipe só consulta. Fica guardado com os
+  Ajustes da fazenda (mesmo histórico de versões). Não precisa rodar nada novo no Supabase.
 
 ## Sem banco configurado
 Com `config.js` vazio, o app funciona em **modo local**: as planilhas inseridas ficam salvas só naquele aparelho.

@@ -27,8 +27,15 @@ Nenhum dado de fazenda e nenhuma senha ficam neste repositório.
 | Papel | Como entra | Pode |
 |---|---|---|
 | **Administrador** | usuário (nome.sobrenome) + senha | todas as fazendas; cadastra fazendas e pessoas; apaga planilhas; edita e restaura ajustes |
-| **Técnico** | usuário + senha | só as fazendas marcadas para ele; envia e apaga planilhas e lançamentos; edita ajustes |
-| **Equipe da fazenda** | só a senha da fazenda | vê a própria fazenda, envia planilhas e lança tratos |
+| **Técnico** | usuário + senha | só as fazendas marcadas para ele; envia e apaga planilhas e lançamentos; edita ajustes, fórmulas e retiros |
+| **Capataz** | usuário + senha própria (6+ caracteres) | vê todos os resultados das fazendas marcadas; **lança só nos retiros liberados** pelo administrador; não envia planilhas nem altera ajustes |
+| **Observador** | só a senha da fazenda | vê tudo da própria fazenda; não lança, não envia planilhas, não altera nada |
+
+O banco confere cada permissão (não só a tela): capataz lançando fora dos retiros liberados é recusado.
+**Lembrar de mim** (tela de entrada, vem marcado): fica conectado no aparelho por até 6 meses e o usuário já vem
+preenchido. Desmarcado: a sessão dura 12 horas e acaba ao fechar o navegador (bom para aparelho compartilhado).
+Liberar capataz: aba **Pessoas** → papel Capataz → marque a fazenda → aparecem os retiros dela → marque os liberados.
+A lista de Pessoas fica agrupada por fazenda.
 
 Segurança: senhas guardadas com criptografia; 10 senhas erradas em 15 minutos bloqueiam o endereço por 15 minutos;
 sessão vale 180 dias no aparelho; trocar a senha de uma fazenda ou desativar uma pessoa desconecta na hora.
@@ -64,10 +71,11 @@ Cada envio, substituição e exclusão de planilha fica registrado com nome e ho
    Reenviar o mesmo retiro e mês **substitui** a versão anterior (para correções).
 10. No celular: abra o endereço e use "Adicionar à tela inicial".
 
-### Atualização: aba Lançamentos (rodar uma vez se o banco já existia)
+### Atualizações do banco (rodar de novo sempre que o arquivo SQL mudar)
 Supabase → **SQL Editor → New query** → cole o arquivo `supabase/01_mr_control.sql` inteiro → **Run**.
-Ele só cria a tabela `lancamentos` e as funções `lancar` / `apagar_lancamento`; não apaga nada.
-Antes disso, o app abre normalmente e só o botão **Lançar** avisa que falta atualizar o banco.
+Pode rodar quantas vezes quiser: ele cria o que falta e atualiza as funções, **sem apagar dados**.
+Se aparecer o aviso "destructive operation", é só a troca de funções antigas por novas: confirme.
+Última mudança: papel Capataz (retiros liberados), login da fazenda como observador e "Lembrar de mim".
 
 ### 4. Manter ativo
 O Supabase gratuito pausa o projeto depois de 7 dias sem uso. O robô `Manter ativo` (aba **Actions**) chama o banco
@@ -85,7 +93,8 @@ Tela centralizada, pensada para a equipe de campo no celular. As planilhas são 
 6. **Data**: Hoje, Ontem, Anteontem ou "Outra data" (só datas passadas; o banco também recusa data futura).
 
 Cada etapa fica verde quando preenchida; antes de lançar aparece um resumo e, depois, o consumo do trato anterior.
-- **Quem lança**: administrador, técnico e equipe da fazenda. **Quem apaga**: administrador e técnico (fica no registro).
+- **Quem lança**: administrador e técnico (qualquer retiro) e capataz (só os retiros liberados para ele).
+  **Quem apaga**: administrador e técnico (fica no registro). O login com a senha da fazenda só consulta.
 - **Mesmo pasto e dia** lançado de novo **corrige** o anterior (não duplica).
 - **Planilha x app**: se a planilha do mês trouxer o mesmo retiro, pasto e dia, vale a planilha ("Já está na planilha").
 - **Sem internet**: fica guardado no aparelho, já entra nas contas e é enviado sozinho quando a conexão volta.
@@ -105,13 +114,31 @@ tocar abre os tratos do pasto; em Auditoria, tocar num tipo de alerta filtra a t
 - Técnico e administrador editam e clicam em **Salvar fórmulas e preços**; a equipe só consulta. Fica guardado com os
   Ajustes da fazenda (mesmo histórico de versões). Não precisa rodar nada novo no Supabase.
 
+## Aba Retiros
+- Lista os retiros que aparecem nas planilhas e lançamentos. No primeiro acesso, a **área útil** vem do cabeçalho da
+  planilha mais recente: confira e clique em **Salvar retiros**.
+- **Área dos pastos** (opcional): os pastos vêm dos lançamentos (nome fixo, só informativo); preencha a área de cada.
+  Com todos preenchidos, a área do retiro passa a ser a soma.
+- Mostra lotação (UA/ha) com a área cadastrada, pastos com trato no último mês, ocupação e capatazes liberados.
+- O cadastro **não muda** os pastos dos lançamentos. Fica salvo com os Ajustes da fazenda.
+
 ## Sem banco configurado
 Com `config.js` vazio, o app funciona em **modo local**: as planilhas inseridas ficam salvas só naquele aparelho.
 
 ## Regras de cálculo (iguais ao BI Consumo v2)
 - Consumo do trato = kg ÷ cabeças-dia até o próximo trato do mesmo Retiro + Pasto, mesmo que esteja na planilha
   do mês ou ano seguinte. Na virada do mês, os dias de cada mês usam as cabeças daquele mês.
-- Consumo de um grupo = soma dos kg ÷ soma das cabeças-dia. Intervalo acima do limite (30 dias) = pasto vazio.
+- Consumo de um grupo = soma dos kg ÷ soma das cabeças-dia.
+- **Saída presumida do lote** (a fazenda não tem lotes fixos por pasto): se o pasto fica mais dias sem fornecimento
+  do que o limite do suplemento, entende-se que o lote saiu depois do último trato, e esse trato é calculado com o
+  **intervalo médio de fornecimento** daquele suplemento, em vez dos dias até o próximo trato.
+  - Limite: "Máx. sem fornecimento (dias)" do produto em **Ajustes**; em branco = média do intervalo + 50%,
+    nunca menos que 7 dias.
+  - Média: do retiro no mês (5+ intervalos); senão da fazenda no mês; senão da fazenda nos 3 meses anteriores.
+    Intervalos acima de 30 dias nunca entram na média.
+  - Se o trato seguinte tem **exatamente o mesmo nº de cabeças**, é o mesmo lote atrasado: vale o intervalo real
+    (até 15 dias; MUB até 30).
+  - O último trato de cada pasto também vira saída presumida se a data mais recente do retiro já passou do limite.
 - Meta = peso estimado × % do produto; faixa = meta ± tolerância (25%). Produtos, metas, preços e regras ficam na aba
   **Ajustes**, por fazenda.
 - O ano vem da data do trato; o mês aparece como "Setembro/2026".

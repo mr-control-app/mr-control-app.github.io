@@ -26,7 +26,7 @@ create table if not exists public.pessoas (
   nome       text not null,
   usuario    text not null unique check (usuario ~ '^[a-z0-9]+(\.[a-z0-9]+)+$'),
   senha_hash text not null,
-  papel      text not null check (papel in ('adm', 'tecnico')),
+  papel      text not null check (papel in ('adm', 'tecnico', 'capataz')),
   ativa      boolean not null default true,
   criado_em  timestamptz not null default now()
 );
@@ -88,6 +88,10 @@ create table if not exists public.registro (
   detalhe    text
 );
 create index if not exists registro_faz on public.registro(fazenda_id, quando desc);
+-- papéis: adm, tecnico, capataz (este último lança só nos retiros liberados; ver pessoa_fazendas.retiros)
+alter table public.pessoas drop constraint if exists pessoas_papel_check;
+alter table public.pessoas add constraint pessoas_papel_check check (papel in ('adm', 'tecnico', 'capataz'));
+alter table public.pessoa_fazendas add column if not exists retiros text[] not null default '{}';
 -- lançamentos feitos direto no app (um trato: retiro + pasto + data). Lançar de novo o mesmo pasto e dia corrige.
 create table if not exists public.lancamentos (
   id         bigserial primary key,
@@ -138,6 +142,8 @@ returns boolean language sql stable set search_path = public as $$
            when 'leitor' then s.fazenda_id = p_fazenda
            when 'tecnico' then exists (select 1 from public.pessoa_fazendas pf join public.fazendas f on f.id = pf.fazenda_id
                                        where pf.pessoa_id = s.pessoa_id and pf.fazenda_id = p_fazenda and f.ativa)
+           when 'capataz' then exists (select 1 from public.pessoa_fazendas pf join public.fazendas f on f.id = pf.fazenda_id
+                                       where pf.pessoa_id = s.pessoa_id and pf.fazenda_id = p_fazenda and f.ativa)
            else false end;
 $$;
 create or replace function public._autor(s public.sessoes)
@@ -157,7 +163,8 @@ begin
 end $$;
 create or replace function public._fazendas_de(p_pessoa int, p_papel text)
 returns jsonb language sql stable set search_path = public as $$
-  select coalesce(jsonb_agg(jsonb_build_object('id', f.id, 'nome', f.nome) order by f.nome), '[]')
+  select coalesce(jsonb_agg(jsonb_build_object('id', f.id, 'nome', f.nome,
+           'retiros', coalesce((select to_jsonb(pf.retiros) from public.pessoa_fazendas pf where pf.pessoa_id = p_pessoa and pf.fazenda_id = f.id), '[]'::jsonb)) order by f.nome), '[]')
   from public.fazendas f
   where f.ativa and (p_papel = 'adm' or exists (select 1 from public.pessoa_fazendas pf where pf.pessoa_id = p_pessoa and pf.fazenda_id = f.id));
 $$;
@@ -173,7 +180,8 @@ $$;
 
 -- ---------- login ----------
 -- Equipe da fazenda: só a senha da fazenda.
-create or replace function public.entrar(p_senha text)
+drop function if exists public.entrar(text);
+create or replace function public.entrar(p_senha text, p_lembrar boolean default true)
 returns jsonb language plpgsql security definer set search_path = public, extensions as $$
 declare f record; tok text; v_ip text := public._ip();
 begin
@@ -184,7 +192,8 @@ begin
     select * into f from public.fazendas where ativa and senha_hash = crypt(p_senha, senha_hash) limit 1;
     if found then
       tok := encode(gen_random_bytes(24), 'hex');
-      insert into public.sessoes(token, fazenda_id) values (tok, f.id);
+      insert into public.sessoes(token, fazenda_id, expira_em)
+      values (tok, f.id, now() + case when coalesce(p_lembrar, true) then interval '180 days' else interval '12 hours' end);
       return jsonb_build_object('token', tok, 'papel', 'leitor', 'nome', null,
         'fazendas', jsonb_build_array(jsonb_build_object('id', f.id, 'nome', f.nome)));
     end if;
@@ -194,8 +203,9 @@ begin
   return jsonb_build_object('erro', 'senha_invalida');
 end $$;
 
--- Administradores e técnicos: usuário (nome.sobrenome) + senha própria.
-create or replace function public.entrar_usuario(p_usuario text, p_senha text)
+-- Administradores, técnicos e capatazes: usuário (nome.sobrenome) + senha própria.
+drop function if exists public.entrar_usuario(text, text);
+create or replace function public.entrar_usuario(p_usuario text, p_senha text, p_lembrar boolean default true)
 returns jsonb language plpgsql security definer set search_path = public, extensions as $$
 declare p public.pessoas; tok text; v_ip text := public._ip();
 begin
@@ -209,7 +219,8 @@ begin
     return jsonb_build_object('erro', 'usuario_invalido');
   end if;
   tok := encode(gen_random_bytes(24), 'hex');
-  insert into public.sessoes(token, pessoa_id) values (tok, p.id);
+  insert into public.sessoes(token, pessoa_id, expira_em)
+  values (tok, p.id, now() + case when coalesce(p_lembrar, true) then interval '180 days' else interval '12 hours' end);
   return jsonb_build_object('token', tok, 'papel', p.papel, 'nome', p.nome, 'usuario', p.usuario,
                             'fazendas', public._fazendas_de(p.id, p.papel));
 end $$;
@@ -224,7 +235,7 @@ create or replace function public.minhas_fazendas(p_token text)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare s public.sessoes;
 begin
-  s := public._exige(p_token, array['adm', 'tecnico', 'leitor']);
+  s := public._exige(p_token, array['adm', 'tecnico', 'capataz', 'leitor']);
   if public._papel(s) = 'leitor' then
     return (select coalesce(jsonb_agg(jsonb_build_object('id', id, 'nome', nome)), '[]') from public.fazendas where id = s.fazenda_id and ativa);
   end if;
@@ -235,10 +246,10 @@ create or replace function public.trocar_senha(p_token text, p_atual text, p_nov
 returns void language plpgsql security definer set search_path = public, extensions as $$
 declare s public.sessoes; p public.pessoas;
 begin
-  s := public._exige(p_token, array['adm', 'tecnico']);
+  s := public._exige(p_token, array['adm', 'tecnico', 'capataz']);
   select * into p from public.pessoas where id = s.pessoa_id;
   if p.senha_hash <> crypt(coalesce(p_atual, ''), p.senha_hash) then raise exception 'senha_atual_errada' using errcode = 'P0001'; end if;
-  if length(coalesce(p_nova, '')) < 8 then raise exception 'senha_curta_pessoa' using errcode = 'P0001'; end if;
+  if length(coalesce(p_nova, '')) < 6 + 2 * (public._papel(s) <> 'capataz')::int then raise exception 'senha_curta_pessoa' using errcode = 'P0001'; end if;
   update public.pessoas set senha_hash = crypt(p_nova, gen_salt('bf')) where id = p.id;
   delete from public.sessoes where pessoa_id = p.id and token <> p_token;   -- sai dos outros aparelhos
 end $$;
@@ -247,8 +258,11 @@ end $$;
 create or replace function public.dados(p_token text, p_fazenda text)
 returns jsonb language plpgsql security definer set search_path = public as $$
 begin
-  perform public._exige(p_token, array['adm', 'tecnico', 'leitor'], p_fazenda);
+  perform public._exige(p_token, array['adm', 'tecnico', 'capataz', 'leitor'], p_fazenda);
   return jsonb_build_object(
+    'capatazes', (select coalesce(jsonb_agg(jsonb_build_object('nome', p.nome, 'retiros', to_jsonb(pf.retiros)) order by p.nome), '[]')
+                  from public.pessoa_fazendas pf join public.pessoas p on p.id = pf.pessoa_id
+                  where pf.fazenda_id = p_fazenda and p.papel = 'capataz' and p.ativa),
     'fazenda', (select jsonb_build_object('id', id, 'nome', nome) from public.fazendas where id = p_fazenda),
     'gerado_em', now(),
     'abas', (select coalesce(jsonb_agg(jsonb_build_object('id', a.id, 'retiro', a.retiro, 'ano', a.ano, 'mes', a.mes, 'arquivo', a.arquivo,
@@ -270,7 +284,7 @@ create or replace function public.enviar_abas(p_token text, p_fazenda text, p_ar
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare s public.sessoes; a jsonb; v_ret text; v_ano int; v_mes int; existia boolean; n_ins int := 0; n_sub int := 0; autor text; nt int;
 begin
-  s := public._exige(p_token, array['adm', 'tecnico', 'leitor'], p_fazenda);
+  s := public._exige(p_token, array['adm', 'tecnico'], p_fazenda);
   if jsonb_typeof(p_abas) <> 'array' or jsonb_array_length(p_abas) = 0 then raise exception 'envio_vazio' using errcode = 'P0001'; end if;
   if jsonb_array_length(p_abas) > 60 or length(p_abas::text) > 6 * 1024 * 1024 then raise exception 'envio_grande' using errcode = 'P0001'; end if;
   if (select count(*) from public.registro where fazenda_id = p_fazenda and acao = 'enviou' and quando > now() - interval '1 day') >= 400 then
@@ -308,14 +322,15 @@ begin
   perform public._registrar(p_fazenda, public._autor(s), 'apagou', a.retiro || ' ' || lpad(a.mes::text, 2, '0') || '/' || a.ano || ' (' || a.arquivo || ')');
 end $$;
 
--- Lançar um trato pelo app: administrador, técnico e equipe da fazenda (como no envio de planilhas).
+-- Lançar um trato pelo app: administrador e técnico (qualquer retiro) e capataz (só nos retiros liberados).
+-- O login com a senha da fazenda é só observador: não lança.
 -- Data só de hoje para trás (horário de Brasília). O mesmo retiro + pasto + dia substitui o anterior.
 create or replace function public.lancar(p_token text, p_fazenda text, p_lanc jsonb)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare s public.sessoes; autor text; v_ret text; v_pasto text; v_tipo text; v_cat text; v_data date; v_qtd int; v_sacos numeric; v_peso numeric;
         hoje date := (now() at time zone 'America/Sao_Paulo')::date; existia boolean; v_id bigint;
 begin
-  s := public._exige(p_token, array['adm', 'tecnico', 'leitor'], p_fazenda);
+  s := public._exige(p_token, array['adm', 'tecnico', 'capataz'], p_fazenda);
   if jsonb_typeof(p_lanc) <> 'object' or length(p_lanc::text) > 2000 then raise exception 'lancamento_invalido' using errcode = 'P0001'; end if;
   v_ret   := upper(trim(coalesce(p_lanc->>'retiro', '')));
   v_pasto := upper(trim(coalesce(p_lanc->>'pasto', '')));
@@ -323,6 +338,9 @@ begin
   v_cat   := nullif(upper(trim(coalesce(p_lanc->>'cat', ''))), '');
   if v_ret = '' or length(v_ret) > 80 or v_pasto = '' or length(v_pasto) > 40 then raise exception 'pasto_obrigatorio' using errcode = 'P0001'; end if;
   if v_tipo = '' or length(v_tipo) > 80 then raise exception 'tipo_obrigatorio' using errcode = 'P0001'; end if;
+  if public._papel(s) = 'capataz' and not exists (select 1 from public.pessoa_fazendas
+       where pessoa_id = s.pessoa_id and fazenda_id = p_fazenda and v_ret = any(retiros)) then
+    raise exception 'retiro_nao_liberado' using errcode = '42501'; end if;
   begin
     v_data := (p_lanc->>'data')::date; v_qtd := (p_lanc->>'qtd')::int; v_sacos := (p_lanc->>'sacos')::numeric; v_peso := nullif(p_lanc->>'peso', '')::numeric;
   exception when others then raise exception 'lancamento_invalido' using errcode = 'P0001'; end;
@@ -451,13 +469,17 @@ begin
   perform public._exige(p_token, array['adm']);
   return (select coalesce(jsonb_agg(jsonb_build_object(
             'id', p.id, 'nome', p.nome, 'usuario', p.usuario, 'papel', p.papel, 'ativa', p.ativa,
-            'fazendas', (select coalesce(jsonb_agg(pf.fazenda_id order by pf.fazenda_id), '[]') from public.pessoa_fazendas pf where pf.pessoa_id = p.id))
+            'fazendas', (select coalesce(jsonb_agg(pf.fazenda_id order by pf.fazenda_id), '[]') from public.pessoa_fazendas pf where pf.pessoa_id = p.id),
+            'retiros', (select coalesce(jsonb_object_agg(pf.fazenda_id, to_jsonb(pf.retiros)), '{}') from public.pessoa_fazendas pf where pf.pessoa_id = p.id))
             order by p.ativa desc, p.nome), '[]')
           from public.pessoas p);
 end $$;
 
+drop function if exists public.adm_salvar_pessoa(text, int, text, text, text, text, boolean, text[]);
+drop function if exists public.adm_salvar_pessoa(text, int, text, text, text, text, boolean, text[], text);   -- versão com e-mail (retirada)
+-- p_retiros (só capataz): {"fazenda": ["RETIRO", ...]} = retiros liberados para lançar em cada fazenda
 create or replace function public.adm_salvar_pessoa(p_token text, p_id int, p_nome text, p_usuario text, p_senha text,
-                                                    p_papel text, p_ativa boolean, p_fazendas text[])
+                                                    p_papel text, p_ativa boolean, p_fazendas text[], p_retiros jsonb default null)
 returns int language plpgsql security definer set search_path = public, extensions as $$
 declare s public.sessoes; v_id int := p_id; autor text;
 begin
@@ -466,10 +488,11 @@ begin
   p_usuario := lower(trim(coalesce(p_usuario, '')));
   if coalesce(trim(p_nome), '') = '' then raise exception 'nome_obrigatorio' using errcode = 'P0001'; end if;
   if p_usuario !~ '^[a-z0-9]+(\.[a-z0-9]+)+$' then raise exception 'usuario_invalido_formato' using errcode = 'P0001'; end if;
-  if p_papel not in ('adm', 'tecnico') then raise exception 'papel_invalido' using errcode = 'P0001'; end if;
+  if p_papel not in ('adm', 'tecnico', 'capataz') then raise exception 'papel_invalido' using errcode = 'P0001'; end if;
+  if p_retiros is not null and (jsonb_typeof(p_retiros) <> 'object' or length(p_retiros::text) > 20000) then raise exception 'retiros_invalidos' using errcode = 'P0001'; end if;
   if exists (select 1 from public.pessoas where usuario = p_usuario and id is distinct from v_id) then
     raise exception 'usuario_repetido' using errcode = 'P0001'; end if;
-  if coalesce(p_senha, '') <> '' and length(p_senha) < 8 then raise exception 'senha_curta_pessoa' using errcode = 'P0001'; end if;
+  if coalesce(p_senha, '') <> '' and length(p_senha) < 6 + 2 * (p_papel <> 'capataz')::int then raise exception 'senha_curta_pessoa' using errcode = 'P0001'; end if;
   -- não deixa ficar sem nenhum administrador ativo
   if v_id is not null and (p_papel <> 'adm' or not coalesce(p_ativa, true))
      and exists (select 1 from public.pessoas where id = v_id and papel = 'adm' and ativa)
@@ -489,11 +512,29 @@ begin
     perform public._registrar(null, autor, 'alterou a pessoa', trim(p_nome) || ' (' || p_papel || case when coalesce(p_ativa, true) then '' else ', desativada' end || ')');
   end if;
   delete from public.pessoa_fazendas where pessoa_id = v_id;
-  if p_papel = 'tecnico' and p_fazendas is not null then
-    insert into public.pessoa_fazendas(pessoa_id, fazenda_id)
-    select v_id, f.id from public.fazendas f where f.id = any(p_fazendas) on conflict do nothing;
+  if p_papel in ('tecnico', 'capataz') and p_fazendas is not null then
+    insert into public.pessoa_fazendas(pessoa_id, fazenda_id, retiros)
+    select v_id, f.id,
+           case when p_papel = 'capataz' and jsonb_typeof(p_retiros -> f.id) = 'array' then
+             (select coalesce(array_agg(distinct left(upper(trim(r)), 80)), '{}') from jsonb_array_elements_text(p_retiros -> f.id) r where trim(r) <> '')
+           else '{}' end
+    from public.fazendas f where f.id = any(p_fazendas) on conflict do nothing;
   end if;
   return v_id;
+end $$;
+
+-- retiros conhecidos de cada fazenda (planilhas, lançamentos e cadastro da aba Retiros) — para liberar capatazes
+create or replace function public.adm_retiros(p_token text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+begin
+  perform public._exige(p_token, array['adm']);
+  return (select coalesce(jsonb_object_agg(fazenda_id, rets), '{}') from (
+    select fazenda_id, jsonb_agg(distinct retiro order by retiro) rets from (
+      select fazenda_id, retiro from public.abas
+      union select fazenda_id, retiro from public.lancamentos
+      union select c.fazenda_id, upper(trim(r ->> 'nome')) from public.config c, jsonb_array_elements(case when jsonb_typeof(c.dados -> 'retiros') = 'array' then c.dados -> 'retiros' else '[]' end) r
+            where coalesce(trim(r ->> 'nome'), '') <> ''
+    ) x group by fazenda_id) y);
 end $$;
 
 -- ---------- manter o projeto ativo (o Supabase gratuito pausa após 7 dias sem uso) ----------
@@ -522,13 +563,14 @@ revoke execute on all functions in schema public from public, anon, authenticate
 -- com "Grant API access to new tables automatically" desmarcado). Tabelas continuam fechadas.
 grant usage on schema public to anon;
 grant execute on function
-  public.entrar(text), public.entrar_usuario(text, text), public.sair(text), public.minhas_fazendas(text),
+  public.entrar(text, boolean), public.entrar_usuario(text, text, boolean), public.sair(text), public.minhas_fazendas(text),
   public.trocar_senha(text, text, text), public.dados(text, text), public.enviar_abas(text, text, text, jsonb),
   public.apagar_aba(text, text, bigint), public.registro_fazenda(text, text),
   public.lancar(text, text, jsonb), public.apagar_lancamento(text, text, bigint),
   public.salvar_config(text, text, jsonb), public.historico_config(text, text), public.restaurar_config(text, text, bigint),
   public.adm_listar_fazendas(text), public.adm_salvar_fazenda(text, text, text, text, boolean),
-  public.adm_listar_pessoas(text), public.adm_salvar_pessoa(text, int, text, text, text, text, boolean, text[]),
+  public.adm_listar_pessoas(text), public.adm_salvar_pessoa(text, int, text, text, text, text, boolean, text[], jsonb),
+  public.adm_retiros(text),
   public.manter_ativo()
 to anon;
 notify pgrst, 'reload schema';

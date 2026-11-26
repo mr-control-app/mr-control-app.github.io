@@ -135,6 +135,11 @@ svg .axis{stroke:var(--line)}
 .sp-d:hover,.sp-d:focus-visible{transform:scale(1.5);opacity:1;outline:none;z-index:2}
 .sp-ax{position:relative;height:16px;color:var(--muted);font-size:11px}.sp-ax span{position:absolute;white-space:nowrap}
 .g-leg{margin-top:10px}
+.lembrar{justify-content:flex-start;margin:2px 0 6px}.lembrar .small{color:var(--muted)}
+.pe-grupo{margin:14px 0 4px;font:600 14px var(--display);display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:4px}.pe-grupo:first-child{margin-top:0}
+.pe-ret{margin:4px 0 8px 24px;display:flex;flex-wrap:wrap;gap:4px 14px}.pe-ret label{font-size:13px}
+.rt-pastos{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}.rt-pastos summary{cursor:pointer;font-weight:600}
+#v-retiros input[readonly]{background:transparent;border-color:transparent;font-weight:600;font-size:16px;padding-left:0}
 .fm-card h3{font:600 17px var(--display);margin:0}
 .fm-card .fm-top{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 .fm-card .field{max-width:none}
@@ -216,9 +221,10 @@ details.mes{border-bottom:1px solid var(--line);padding:6px 0}details.mes summar
   <form class="login-box" id="loginForm" autocomplete="on">
     <img src="icone-192.png" alt="Mr. Control">
     <h1>Mr. Control</h1>
-    <p>Equipe da fazenda: deixe o usuário em branco e use a senha da fazenda.<br>Técnicos e administradores: usuário (nome.sobrenome) e senha própria.</p>
+    <p>Capatazes, técnicos e administradores: usuário (nome.sobrenome) e senha própria.<br>Só para consultar: deixe o usuário em branco e use a senha da fazenda.</p>
     <div class="field"><label for="usr">Usuário (opcional)</label><input type="text" id="usr" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="nome.sobrenome"></div>
     <div class="field"><label for="pwd">Senha</label><input type="password" id="pwd" autocomplete="current-password" required></div>
+    <label class="chk lembrar"><input type="checkbox" id="lembrar" checked> Lembrar de mim <span class="small">(fica conectado neste aparelho)</span></label>
     <button class="btn primary" type="submit" id="btnEntrar">Entrar</button>
     <div class="err" id="loginErr" role="alert"></div>
   </form>
@@ -263,6 +269,7 @@ details.mes{border-bottom:1px solid var(--line);padding:6px 0}details.mes summar
     <a href="#logistica">Logística</a>
     <a href="#auditoria">Auditoria</a>
     <a href="#formulas">Fórmulas e batidas</a>
+    <a href="#retiros">Retiros</a>
     <a href="#planilhas">Planilhas</a>
     <a href="#ajustes">Ajustes</a>
     <a href="#fazendas" class="adm-only" hidden>Fazendas</a>
@@ -376,6 +383,7 @@ details.mes{border-bottom:1px solid var(--line);padding:6px 0}details.mes summar
   <!-- PLANILHAS -->
   <section class="view" id="v-lancamentos">
     <div class="lc-wrap">
+      <div class="card lc-card notice" id="lcBloq" hidden></div>
       <form class="card lc-card" id="lcForm" autocomplete="off" novalidate>
         <h2 class="lc-tit">Lançar consumo</h2>
         <p class="note lc-sub">Toque nas opções. Lançar de novo o mesmo pasto no mesmo dia corrige o anterior.</p>
@@ -441,6 +449,17 @@ details.mes{border-bottom:1px solid var(--line);padding:6px 0}details.mes summar
     <div class="fm-barra fm-ed" id="fmBarra" hidden><span id="fmSujo">Alterações não salvas</span><button class="btn" id="fmDesfazer">Desfazer</button><button class="btn primary" id="fmSalvar">Salvar fórmulas e preços</button></div>
   </section>
 
+  <section class="view" id="v-retiros">
+    <div class="notice" id="rtAviso" hidden></div>
+    <div class="grid g4" id="kRet"></div>
+    <div class="card"><div class="row" style="justify-content:space-between"><h2>Cadastro dos retiros</h2>
+        <div class="row"><button class="btn rt-ed" id="rtImport">Importar áreas das planilhas</button><button class="btn rt-ed" id="rtAdd">Novo retiro</button></div></div>
+      <p class="note">Área útil e pastos de cada retiro. A área cadastrada é usada na lotação (UA/ha); sem ela, vale a área do cabeçalho da planilha.
+        Os pastos cadastrados aqui <b>não</b> mudam os pastos dos lançamentos.</p></div>
+    <div class="grid g2" id="rtLista" style="align-items:start"></div>
+    <div class="fm-barra rt-ed" id="rtBarra" hidden><span>Alterações não salvas</span><button class="btn" id="rtDesfazer">Desfazer</button><button class="btn primary" id="rtSalvar">Salvar retiros</button></div>
+  </section>
+
   <section class="view" id="v-planilhas">
     <div class="card"><div class="row" style="justify-content:space-between"><h2>Planilhas salvas</h2><button class="btn primary" id="pick2">Lançar planilhas</button></div>
       <p class="note" id="plNote"></p>
@@ -474,9 +493,9 @@ details.mes{border-bottom:1px solid var(--line);padding:6px 0}details.mes summar
         <form class="form" id="peForm">
           <div class="field"><label for="peNome">Nome</label><input id="peNome" required></div>
           <div class="field"><label for="peUsr">Usuário (nome.sobrenome)</label><input id="peUsr" autocapitalize="none" spellcheck="false" placeholder="joao.silva" required></div>
-          <div class="field"><label for="peSenha">Senha (8+ caracteres)</label><input id="peSenha" type="text" autocomplete="off"></div>
-          <div class="field"><label for="pePapel">Papel</label><select id="pePapel"><option value="tecnico">Técnico: só as fazendas marcadas</option><option value="adm">Administrador: todas as fazendas e cadastros</option></select></div>
-          <div id="peFzBox"><div class="small" style="margin-bottom:4px">Fazendas liberadas</div><div class="chk" id="peFz"></div></div>
+          <div class="field"><label for="peSenha" id="peSenhaLbl">Senha (8+ caracteres)</label><input id="peSenha" type="text" autocomplete="off"></div>
+          <div class="field"><label for="pePapel">Papel</label><select id="pePapel"><option value="capataz">Capataz: lança só nos retiros marcados, vê tudo</option><option value="tecnico">Técnico: só as fazendas marcadas</option><option value="adm">Administrador: todas as fazendas e cadastros</option></select></div>
+          <div id="peFzBox"><div class="small" style="margin-bottom:4px" id="peFzTit">Fazendas liberadas</div><div id="peFz"></div></div>
           <label class="chk"><input type="checkbox" id="peAtiva" checked> Pessoa ativa</label>
           <div class="row"><button class="btn primary" type="submit">Salvar pessoa</button><span class="small" id="peMsg" role="status"></span></div>
         </form>
@@ -530,10 +549,15 @@ const DEFAULT_CFG={
   ],
   tolerancia:25, diasMax:30, fatorAlto:3, mudanca:30, mesesSeca:[5,6,7,8,9], pesoUA:450,
   insumos:[],   // [{id, nome, emb (kg da embalagem), preco (R$ da embalagem), em (data do preço)}]
-  formulas:[]   // [{id, nome, produto (chave dos Ajustes ou ""), itens:[{ins, kg}], obs}]
+  formulas:[],  // [{id, nome, produto (chave dos Ajustes ou ""), itens:[{ins, kg}], obs}]
+  retiros:null  // [{nome, area (ha), pastos:[{nome, area}], fonte}] — pastos = só áreas dos pastos já lançados; null = ainda não cadastrado
 };
 let CFG=loadCfg();
 let FM=null,FM_SUJO=false;   // rascunho da aba Fórmulas e batidas
+let RT=null,RT_SUJO=false;   // rascunho da aba Retiros
+const RET_CAPS=new Map();    // "fazenda|retiro" → capatazes liberados (vem junto com os dados da fazenda)
+function capatazesDe(fid,l){for(const k of [...RET_CAPS.keys()])if(k.startsWith(fid+"|"))RET_CAPS.delete(k);
+  for(const c of l||[])for(const r of c.retiros||[]){const k=fid+"|"+up(r);RET_CAPS.set(k,(RET_CAPS.get(k)||[]).concat(c.nome));}}
 function loadCfg(){try{const s=localStorage.getItem("mrcontrol-cfg");if(s){const c=JSON.parse(s);return Object.assign(structuredClone(DEFAULT_CFG),c);}}catch(e){}return structuredClone(DEFAULT_CFG);}
 function saveCfg(){try{localStorage.setItem("mrcontrol-cfg",JSON.stringify(CFG));}catch(e){}}
 
@@ -618,6 +642,7 @@ function precoDe(p){if(!p)return null;const f=formulaDoProduto(p);const ck=f?cal
 function produtoDe(tipo){if(!tipo)return null;for(const p of CFG.produtos){if(p.chave&&tipo.includes(String(p.chave).toUpperCase()))return p;}return null;}
 function median(a){if(!a.length)return null;const s=[...a].sort((x,y)=>x-y),m=s.length>>1;return s.length%2?s[m]:(s[m-1]+s[m])/2;}
 
+const INT_TETO=30,INT_MIN=5,INT_PISO=7;   // >30 dias nunca entra na média; mínimo de 5 intervalos por nível; limite nunca abaixo de 7 dias
 function compute(raw){
   const tol=CFG.tolerancia/100;
   const R=raw.map(r=>{
@@ -633,9 +658,14 @@ function compute(raw){
   // por Retiro + Pasto, através de todos os meses
   const groups=new Map();
   for(const r of R){const k=r.retiro+"|"+r.pasto;if(!groups.has(k))groups.set(k,[]);groups.get(k).push(r);}
+  // 1ª passada: próximo trato e dias até ele, em cada pasto
+  const ints=[];                                     // intervalos observados: {ret, pk, mk, d}
+  const pkDe=r=>r.prod?r.prod.chave:"?"+(r.tipo||"");
+  const ultRet=new Map();                            // data mais recente lançada em cada retiro
+  for(const r of R){const t=r.data.getTime();if(!(ultRet.get(r.retiro)>=t))ultRet.set(r.retiro,t);}
   for(const [k,g] of groups){
-    const qByDate=new Map();const cnt=new Map();
-    for(const r of g){const t=r.data.getTime();qByDate.set(t,Math.max(qByDate.get(t)??-Infinity,r.qtd??-Infinity));cnt.set(t,(cnt.get(t)||0)+1);}
+    const qByDate=new Map();const cnt=new Map();const rep=new Map();
+    for(const r of g){const t=r.data.getTime();qByDate.set(t,Math.max(qByDate.get(t)??-Infinity,r.qtd??-Infinity));cnt.set(t,(cnt.get(t)||0)+1);if(!rep.has(t))rep.set(t,r);}
     const datas=[...qByDate.keys()].sort((a,b)=>a-b);
     const med=median(g.map(r=>r.sacos).filter(v=>v!=null));
     for(const r of g){
@@ -644,13 +674,41 @@ function compute(raw){
       r.prox=nx?new Date(nx):null;
       let q=nx?qByDate.get(nx):null;r.qProx=(q==null||q===-Infinity)?null:q;
       r.dias=nx?Math.round((nx-t)/DAY):null;
-      r.stInt=r.dias==null?"Em aberto":(r.dias>CFG.diasMax?"Pasto vazio / quebra":"Válido");
+    }
+    for(let i=0;i<datas.length-1;i++){const r=rep.get(datas[i]);ints.push({ret:r.retiro,pk:pkDe(r),mk:r.mesKey,d:Math.round((datas[i+1]-datas[i])/DAY)});}
+  }
+  // médias de intervalo por suplemento: retiro/mês → fazenda/mês → fazenda nos 3 meses anteriores
+  const L1=new Map(),L2=new Map();
+  for(const x of ints){const a=x.ret+"|"+x.pk+"|"+x.mk,b=x.pk+"|"+x.mk;(L1.get(a)||L1.set(a,[]).get(a)).push(x.d);(L2.get(b)||L2.set(b,[]).get(b)).push(x.d);}
+  const media=a=>a.reduce((s,v)=>s+v,0)/a.length,antes=(mk,n)=>{let y=Math.floor(mk/100),m=mk%100-n;while(m<1){m+=12;y--;}return y*100+m;};
+  const memo=new Map();
+  const estimativa=(ret,pk,mk,prod)=>{const key=ret+"|"+pk+"|"+mk;if(memo.has(key))return memo.get(key);
+    const fixo=prod&&prod.dm>0?prod.dm:null;let res={lim:fixo||INT_TETO,avg:null,fonte:null};
+    for(const [arr,fonte] of [[L1.get(key)||[],"retiro"],[L2.get(pk+"|"+mk)||[],"fazenda"],[[1,2,3].flatMap(n=>L2.get(pk+"|"+antes(mk,n))||[]),"fazenda, 3 meses anteriores"]]){
+      const prov=arr.filter(d=>d<=INT_TETO);if(prov.length<INT_MIN)continue;      // poucos dados: tenta o próximo nível
+      const lim=fixo||Math.max(INT_PISO,media(prov)*1.5),fin=arr.filter(d=>d<=lim);   // padrão: média + 50%, no mínimo 7 dias
+      res={lim,avg:fin.length?media(fin):media(prov),fonte};break;}
+    memo.set(key,res);return res;};
+  // 2ª passada: intervalo normal, saída presumida do lote ou em aberto
+  for(const [k,g] of groups){
+    const med=g[0].medSacos;
+    for(const r of g){
+      const t=r.data.getTime(),est=estimativa(r.retiro,pkDe(r),r.mesKey,r.prod);
+      r.limDias=est.lim;r.diasEst=null;r.fonteEst=null;
+      const lacuna=r.dias!=null?r.dias:(ultRet.get(r.retiro)-t)/DAY;            // sem próximo trato: até a data mais recente do retiro
+      // mesmo nº de cabeças no trato seguinte = mesmo lote, só atrasou: vale o intervalo real (trava: 15 dias; MUB 30)
+      const trava=/MUB/.test(pkDe(r))?30:15;
+      const mesmoLote=r.dias!=null&&r.dias<=trava&&r.qProx!=null&&r.qProx===r.qtd;
+      r.stInt=lacuna>est.lim&&!mesmoLote?(est.avg!=null?"Saída presumida":"Sem base para estimar"):(r.dias==null?"Em aberto":"Válido");
       r.cabDia=null;r.diasV=null;r.kgV=null;r.cons=null;r.varCab=null;
       if(r.stInt==="Válido"&&r.qtd>0){
         const dMes=Math.min(r.dias,Math.round((endOfMonth(r.data)-r.data)/DAY)+1);
         const qp=(r.qProx>0)?r.qProx:r.qtd;
         r.cabDia=r.qtd*dMes+qp*(r.dias-dMes);r.diasV=r.dias;r.kgV=r.kg;r.cons=r.kgV/r.cabDia;
         if(r.qProx!=null)r.varCab=r.qProx/r.qtd-1;
+      }else if(r.stInt==="Saída presumida"&&r.qtd>0){
+        // o lote saiu depois deste trato: o sal foi consumido no intervalo médio do suplemento
+        r.diasEst=est.avg;r.fonteEst=est.fonte;r.cabDia=r.qtd*est.avg;r.diasV=est.avg;r.kgV=r.kg;r.cons=r.kgV/r.cabDia;
       }
       r.status=r.cons==null?"Sem cálculo":(r.meta==null?"Sem Meta":(r.cons>r.lmax?"Acima":(r.cons<r.lmin?"Abaixo":"Dentro")));
       const al=[];
@@ -659,8 +717,7 @@ function compute(raw){
       if(!(r.peso>0))al.push("Sem peso");
       if(!(r.kg>0))al.push("Fornecimento zerado");
       if(r.lancDia>1)al.push("Lançamento repetido no dia");
-      if(r.stInt==="Pasto vazio / quebra")al.push(`Intervalo acima de ${CFG.diasMax} dias`);
-      if(r.cons!=null&&r.lmax!=null&&r.dias>=3&&r.cons>CFG.fatorAlto*r.lmax)al.push("Consumo muito alto");
+      if(r.cons!=null&&r.lmax!=null&&(r.diasV||0)>=3&&r.cons>CFG.fatorAlto*r.lmax)al.push("Consumo muito alto");
       if(med!=null&&r.sacos>5*med&&r.sacos>20)al.push("Sacos fora do padrão do pasto");
       if(r.varCab!=null&&Math.abs(r.varCab)>CFG.mudanca/100)al.push(`Mudança de cabeças acima de ${CFG.mudanca}%`);
       r.alertas=al;
@@ -692,11 +749,20 @@ function animaisSup(rows){
   return tot/meses.size;
 }
 function saidaFabrica(rows){let s=0;for(const [,g] of groupBy(rows,r=>r.retiro+"|"+r.mesKey))s+=Math.max(0,...g.map(r=>r.saida||0));return s;}
+// área útil cadastrada na aba Retiros (soma dos pastos, se houver); null = usa a da planilha
+function retiroCad(nome,c=CFG){return (c.retiros||[]).find(x=>x.nome===nome)||null;}
+// pastos que já apareceram nos lançamentos (planilhas e app) — nomes congelados
+function pastosVistos(ret){return [...new Set(RAW.filter(r=>up(r.retiro)===ret).map(r=>up(r.pasto)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR",{numeric:true}));}
+function areaPastos(x){const vis=pastosVistos(x.nome),m=new Map((x.pastos||[]).filter(p=>p.area>0).map(p=>[p.nome,+p.area]));
+  const com=vis.filter(n=>m.has(n));return {n:vis.length,com:com.length,soma:com.reduce((s,n)=>s+m.get(n),0),completa:vis.length>0&&com.length===vis.length};}
+function areaRetiro(x){if(!x)return null;const a=areaPastos(x);return a.completa?a.soma:(x.area>0?+x.area:null);}
+const areaCadastrada=nome=>areaRetiro(retiroCad(nome));
 function txLotacao(rows){
   let peso=0,area=0;
-  for(const [,g] of groupBy(rows,r=>r.retiro)){const ult=Math.max(...g.map(r=>r.mesKey));const gu=g.filter(r=>r.mesKey===ult);
+  for(const [,g] of groupBy(rows,r=>r.retiro)){const cm=g.filter(r=>r.mapa>0);   // último mês com mapa de gado (lançamentos do app não têm)
+    const ult=Math.max(...(cm.length?cm:g).map(r=>r.mesKey));const gu=g.filter(r=>r.mesKey===ult);
     const mapa=Math.max(0,...gu.map(r=>r.mapa||0));const pm=gu.filter(r=>r.peso>0);const pmed=pm.length?sum(pm,r=>r.peso)/pm.length:0;
-    peso+=mapa*pmed;area+=Math.max(0,...g.map(r=>r.area||r.areaHdr||0));}
+    const ac=areaCadastrada(g[0].retiro);peso+=mapa*pmed;area+=ac!=null?ac:Math.max(0,...g.map(r=>r.area||r.areaHdr||0));}
   return area?peso/CFG.pesoUA/area:null;
 }
 function catPad(c){
@@ -997,10 +1063,11 @@ function render(){
   const fa=document.getElementById("fAlert");const curA=fa.value;
   fa.innerHTML=`<option value="">Todos (${alertas})</option>`+[...tipos].sort((a,b)=>b[1]-a[1]).map(([k,n])=>`<option value="${esc(k)}"${k===curA?" selected":""}>${esc(k)} (${n})</option>`).join("");
   document.getElementById("kAud").innerHTML=kpi("Lançamentos",f0(rows.length),`${new Set(rows.map(r=>r.arquivo)).size} arquivo(s)`,"acc")+kpi("Com alerta",f0(alertas),pc(div(alertas,rows.length),1)+" dos lançamentos",alertas?"low":"ok")+
-    kpi("Em aberto",f0(rows.filter(r=>r.stInt==="Em aberto").length),"último trato de cada pasto, aguardando a próxima planilha","acc")+kpi("Pasto vazio / quebra",f0(rows.filter(r=>r.stInt==="Pasto vazio / quebra").length),`intervalo acima de ${CFG.diasMax} dias`,"acc");
+    kpi("Em aberto",f0(rows.filter(r=>r.stInt==="Em aberto").length),"último trato de cada pasto, aguardando a próxima planilha","acc")+kpi("Saída presumida do lote",f0(rows.filter(r=>r.stInt==="Saída presumida").length),"sem trato além do limite: calculado com o intervalo médio","acc")
+    +(rows.some(r=>r.stInt==="Sem base para estimar")?kpi("Sem base para estimar",f0(rows.filter(r=>r.stInt==="Sem base para estimar").length),"saída sem média do suplemento: fora da conta","acc"):"");
   const audRows=rows.filter(r=>r.alertas.length&&(!fa.value||r.alertas.includes(fa.value))).sort((a,b)=>b.data-a.data).slice(0,500);
   document.getElementById("aud").innerHTML=table([{t:"Arquivo",f:r=>esc(r.arquivo)},{t:"Retiro",f:r=>esc(r.retiro)},{t:"Pasto",f:r=>`<b>${esc(r.pasto)}</b>`},{t:"Data",f:r=>dt(r.data)},{t:"Sacos",n:1,f:r=>f0(r.sacos)},{t:"Cabeças",n:1,f:r=>f0(r.qtd)},
-    {t:"Dias",n:1,f:r=>r.dias??"–"},{t:"Consumo",n:1,f:r=>f3(r.cons)},{t:"Alertas",f:r=>r.alertas.map(esc).join("<br>")}],audRows,{click:1,key:r=>r.chave})
+    {t:"Dias",n:1,f:r=>r.stInt==="Saída presumida"?`${r.dias??"–"}<br><span class="small" title="Lote saiu: usado o intervalo médio do suplemento (${esc(r.fonteEst)})">→ ${f1(r.diasEst)} saída</span>`:(r.dias??"–")},{t:"Consumo",n:1,f:r=>f3(r.cons)},{t:"Alertas",f:r=>r.alertas.map(esc).join("<br>")}],audRows,{click:1,key:r=>r.chave})
     +(alertas>500?`<p class="small">Mostrando os 500 mais recentes. Use os filtros para ver os demais.</p>`:"");
   renderGraficos(rows,P);bindRowClicks();
 }
@@ -1012,14 +1079,14 @@ function showPasto(k){
   box.innerHTML=`<div class="row" style="justify-content:space-between"><h2>${esc(g[0].retiro)} · pasto ${esc(g[0].pasto)}</h2>${pill(x.status)}</div>
   <p class="note">Consumo ${f3(x.cons)} kg/cab/dia contra meta ${f3(x.meta)}. ${g.length} tratos.</p>
   <div class="scroll" style="max-height:420px">${table([{t:"Data",f:r=>dt(r.data)},{t:"Mês",f:r=>esc(r.mes)},{t:"Produto",f:r=>esc(r.tipo)},{t:"Cabeças",n:1,f:r=>f0(r.qtd)},{t:"Peso",n:1,f:r=>f0(r.peso)},{t:"Sacos",n:1,f:r=>f1(r.sacos)},
-    {t:"Próximo trato",f:r=>dt(r.prox)},{t:"Dias",n:1,f:r=>r.dias??"–"},{t:"Consumo",n:1,f:r=>f3(r.cons)},{t:"Meta",n:1,f:r=>f3(r.meta)},{t:"Situação",f:r=>r.cons==null?`<span class="small">${esc(r.stInt)}</span>`:pill(r.status)}],g)}</div>`;
+    {t:"Próximo trato",f:r=>dt(r.prox)},{t:"Dias",n:1,f:r=>r.stInt==="Saída presumida"?`${r.dias??"–"}<br><span class="small" title="Lote saiu: usado o intervalo médio do suplemento (${esc(r.fonteEst)})">→ ${f1(r.diasEst)} saída</span>`:(r.dias??"–")},{t:"Consumo",n:1,f:r=>f3(r.cons)},{t:"Meta",n:1,f:r=>f3(r.meta)},{t:"Situação",f:r=>r.cons==null?`<span class="small">${esc(r.stInt)}</span>`:pill(r.status)}],g)}</div>`;
   if(location.hash!=="#pastos")location.hash="pastos";
   setTimeout(()=>box.scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"}),50);
 }
 
 /* ======================= NAVEGAÇÃO ======================= */
-const VIEWS=["visao","lancamentos","formulas","relatorio","pastos","capatazes","tendencia","logistica","auditoria","planilhas","ajustes","fazendas","pessoas"];
-const SEM_FILTRO=["lancamentos","formulas","planilhas","ajustes","fazendas","pessoas"];
+const VIEWS=["visao","lancamentos","formulas","retiros","relatorio","pastos","capatazes","tendencia","logistica","auditoria","planilhas","ajustes","fazendas","pessoas"];
+const SEM_FILTRO=["lancamentos","formulas","retiros","planilhas","ajustes","fazendas","pessoas"];
 function route(){let v=VIEWS.includes(location.hash.slice(1))?location.hash.slice(1):"visao";
   if((v==="fazendas"||v==="pessoas")&&!(USER&&USER.admin))v="visao";
   VIEWS.forEach(n=>document.getElementById("v-"+n).classList.toggle("on",n===v));
@@ -1028,6 +1095,7 @@ function route(){let v=VIEWS.includes(location.hash.slice(1))?location.hash.slic
   if(v==="planilhas")renderPlanilhas();
   if(v==="lancamentos")renderLanc();
   if(v==="formulas")renderFormulas();
+  if(v==="retiros")renderRetiros();
   if(v==="fazendas")carregarFazendasAdm();
   if(v==="pessoas")carregarPessoas();
   if(v==="ajustes")carregarHistCfg();}
@@ -1046,7 +1114,7 @@ const ERROS_API={data_futura:"A data não pode ser no futuro.",data_antiga:"Data
   tipo_obrigatorio:"Informe o tipo de sal.",lancamento_invalido:"Lançamento com dados inválidos.",lancamento_inexistente:"Esse lançamento já tinha sido apagado.",senha_curta:"A senha da equipe precisa ter pelo menos 6 caracteres.",senha_repetida:"Essa senha já é usada por outra fazenda. Escolha outra.",
   codigo_invalido:"Código inválido: use letras minúsculas, números e hífen (ex.: mafra).",nome_obrigatorio:"Informe o nome.",senha_equipe_obrigatoria:"Informe a senha da equipe.",
   usuario_invalido_formato:"O usuário deve ser nome.sobrenome (minúsculas e números, sem acento e sem espaço).",usuario_repetido:"Esse usuário já existe.",
-  senha_curta_pessoa:"A senha precisa ter pelo menos 8 caracteres.",senha_obrigatoria:"Informe a senha inicial.",ultimo_adm:"É preciso ter pelo menos um administrador ativo.",
+  senha_curta_pessoa:"A senha precisa ter pelo menos 8 caracteres (capataz: 6).",retiro_nao_liberado:"Este retiro não está liberado para você lançar. Fale com o administrador.",retiros_invalidos:"Retiros liberados inválidos.",senha_obrigatoria:"Informe a senha inicial.",ultimo_adm:"É preciso ter pelo menos um administrador ativo.",
   senha_atual_errada:"A senha atual não confere.",limite_envios:"Limite de envios do dia atingido para esta fazenda. Tente amanhã.",limite_abas:"Limite de planilhas guardadas atingido. Apague meses antigos.",
   envio_grande:"Arquivo grande demais para um envio.",aba_invalida:"Uma das abas não está no formato esperado.",aba_inexistente:"Essa planilha já tinha sido apagada.",versao_inexistente:"Versão não encontrada."};
 async function rpc(fn,body){
@@ -1075,7 +1143,10 @@ const IDB=(()=>{const mem={};let dbp=null;
 
 /* ======================= ESTADO DA SESSÃO ======================= */
 let SESSAO=null,USER=null,FAZ=null,FAZS=[],ABAS=[],CFG_INFO=null,LANC=[];
-function papelNome(p){return p==="adm"?"Administrador":p==="tecnico"?"Técnico":"Equipe da fazenda";}
+function papelNome(p){return p==="adm"?"Administrador":p==="tecnico"?"Técnico":p==="capataz"?"Capataz":"Observador";}
+const SESS={get(){const l=LS.get("sessao");if(l)return l;try{const v=sessionStorage.getItem("mrcontrol-sessao");return v?JSON.parse(v):null;}catch(e){return null;}},
+  set(v){if(v&&v.lembrar===false){LS.del("sessao");try{sessionStorage.setItem("mrcontrol-sessao",JSON.stringify(v));}catch(e){}}else LS.set("sessao",v);},
+  del(){LS.del("sessao");try{sessionStorage.removeItem("mrcontrol-sessao");}catch(e){}}};
 function aplicarPapel(){
   const ed=!ONLINE||(USER&&USER.editor);
   document.querySelectorAll(".adm-only").forEach(e=>e.hidden=!(USER&&USER.admin));
@@ -1084,6 +1155,7 @@ function aplicarPapel(){
   $("#btnSenha").hidden=!(USER&&USER.pessoa);
   if(USER)$("#userInfo").innerHTML=`<b>${esc(USER.nome||papelNome(USER.papel))}</b> · ${papelNome(USER.papel)}`;
   $("#v-ajustes").classList.toggle("ro",!ed);
+  $("#pick2").hidden=!ed;document.querySelectorAll(".drop").forEach(d=>d.hidden=!ed);
   $("#applyCfg").hidden=!ed;$("#addProd").hidden=!ed;$("#resetCfg").hidden=!ed;
 }
 function setDados(abas,src,lanc){
@@ -1093,17 +1165,21 @@ function setDados(abas,src,lanc){
   if($("#v-planilhas").classList.contains("on"))renderPlanilhas();
   if($("#v-lancamentos").classList.contains("on"))renderLanc();
   if($("#v-formulas").classList.contains("on"))renderFormulas();
+  if($("#v-retiros").classList.contains("on"))renderRetiros();
 }
-function cfgDe(dados){if(!FM_SUJO)FM=null;return Object.assign(structuredClone(DEFAULT_CFG),dados||{});}
+function cfgDe(dados){if(!FM_SUJO)FM=null;if(!RT_SUJO)RT=null;return Object.assign(structuredClone(DEFAULT_CFG),dados||{});}
 
 /* ---------- login ---------- */
 $("#loginForm").addEventListener("submit",async e=>{
   e.preventDefault();const senha=$("#pwd").value;if(!senha)return;
-  const usuario=$("#usr").value.trim().toLowerCase();
+  const usuario=$("#usr").value.trim().toLowerCase(),lembrar=$("#lembrar").checked;
   $("#btnEntrar").disabled=true;$("#loginErr").textContent="Entrando…";
-  try{const r=usuario?await rpc("entrar_usuario",{p_usuario:usuario,p_senha:senha}):await rpc("entrar",{p_senha:senha});
+  // banco ainda sem "lembrar de mim" (SQL novo não rodado): entra do jeito antigo
+  const ent=async c=>{try{return await rpc(usuario?"entrar_usuario":"entrar",c);}catch(e){if(e.cod!=="banco_antigo")throw e;delete c.p_lembrar;return rpc(usuario?"entrar_usuario":"entrar",c);}};
+  try{const r=await ent(usuario?{p_usuario:usuario,p_senha:senha,p_lembrar:lembrar}:{p_senha:senha,p_lembrar:lembrar});
     if(r&&r.erro)throw new ErroAPI(r.erro==="muitas_tentativas"?"Muitas tentativas erradas. Espere 15 minutos e tente de novo.":usuario?"Usuário ou senha não reconhecidos.":"Senha não reconhecida.","senha");
-    $("#pwd").value="";$("#loginErr").textContent="";LS.set("sessao",r);iniciar(r);
+    r.lembrar=lembrar;LS.set("lembrar",lembrar);if(lembrar&&usuario)LS.set("ultimo-usuario",usuario);else LS.del("ultimo-usuario");
+    $("#pwd").value="";$("#loginErr").textContent="";SESS.set(r);iniciar(r);
   }catch(err){$("#loginErr").textContent=err.message;}finally{$("#btnEntrar").disabled=false;}
 });
 $("#btnSair").onclick=async()=>{
@@ -1111,12 +1187,14 @@ $("#btnSair").onclick=async()=>{
   if(pend&&b.dataset.ok!=="1"){b.dataset.ok="1";b.textContent=`Sair e perder ${pend} lançamento(s) sem internet?`;toast("Há lançamentos guardados que ainda não foram enviados. Conecte-se à internet para enviá-los antes de sair.");
     setTimeout(()=>{b.dataset.ok="";b.textContent="Sair";},6000);return;}
   b.dataset.ok="";b.textContent="Sair";FAZS.forEach(f=>setFila([],f.id));
-  const tok=SESSAO&&SESSAO.token;SESSAO=null;USER=null;LS.del("sessao");await IDB.limpar();
+  const tok=SESSAO&&SESSAO.token;SESSAO=null;USER=null;SESS.del();await IDB.limpar();
   if(tok)rpc("sair",{p_token:tok}).catch(()=>{});mostrarLogin();};
-function mostrarLogin(msgTxt){$("#appRoot").hidden=true;$("#login").hidden=false;$("#loginErr").textContent=msgTxt||"";setTimeout(()=>$("#usr").focus(),50);}
-function sessaoCaiu(){LS.del("sessao");SESSAO=null;USER=null;mostrarLogin("Sua sessão expirou ou o acesso mudou. Entre de novo.");}
+function mostrarLogin(msgTxt){$("#appRoot").hidden=true;$("#login").hidden=false;$("#loginErr").textContent=msgTxt||"";
+  const lb=LS.get("lembrar");$("#lembrar").checked=lb!==false;const u=LS.get("ultimo-usuario");if(u&&!$("#usr").value)$("#usr").value=u;
+  setTimeout(()=>(u?$("#pwd"):$("#usr")).focus(),50);}
+function sessaoCaiu(){SESS.del();SESSAO=null;USER=null;mostrarLogin("Sua sessão expirou ou o acesso mudou. Entre de novo.");}
 function iniciar(s){
-  SESSAO=s;USER={papel:s.papel,admin:s.papel==="adm",editor:s.papel==="adm"||s.papel==="tecnico",nome:s.nome||"",pessoa:!!s.usuario};
+  SESSAO=s;USER={papel:s.papel,admin:s.papel==="adm",editor:s.papel==="adm"||s.papel==="tecnico",capataz:s.papel==="capataz",observador:s.papel==="leitor",nome:s.nome||"",pessoa:!!s.usuario};
   $("#login").hidden=true;$("#appRoot").hidden=false;aplicarPapel();
   preencherFazendas(s.fazendas||[]);
   const ult=LS.get("fazenda");
@@ -1130,7 +1208,7 @@ function preencherFazendas(lista){
   sel.hidden=lista.length<2;if(FAZ&&lista.some(f=>f.id===FAZ))sel.value=FAZ;
 }
 async function atualizarListaFazendas(){
-  try{const l=await rpc("minhas_fazendas",{p_token:SESSAO.token});SESSAO.fazendas=l;LS.set("sessao",SESSAO);preencherFazendas(l);
+  try{const l=await rpc("minhas_fazendas",{p_token:SESSAO.token});SESSAO.fazendas=l;SESS.set(SESSAO);preencherFazendas(l);if($("#v-lancamentos").classList.contains("on"))renderLanc();
     if(l.length&&!l.some(f=>f.id===FAZ))abrirFazenda(l[0].id);}
   catch(e){if(e.cod==="sessao")sessaoCaiu();}
 }
@@ -1138,13 +1216,13 @@ $("#farmSel").onchange=e=>abrirFazenda(e.target.value);
 
 /* ---------- dados da fazenda: cópia do aparelho na hora, depois a versão do banco ---------- */
 async function abrirFazenda(fid){
-  if(FAZ!==fid){FM=null;FM_SUJO=false;$("#fmBarra").hidden=true;}
+  if(FAZ!==fid){FM=null;FM_SUJO=false;$("#fmBarra").hidden=true;RT=null;RT_SUJO=false;$("#rtBarra").hidden=true;}
   FAZ=fid;LS.set("fazenda",fid);const nome=(FAZS.find(f=>f.id===fid)||{}).nome||fid;
   const cache=await IDB.get("faz:"+fid);
-  if(cache){CFG=cfgDe(cache.config);CFG_INFO=cache;renderCfg();setDados(cache.abas||[],nome,cache.lancamentos||[]);msg("Atualizando…");}
+  if(cache){capatazesDe(fid,cache.capatazes);CFG=cfgDe(cache.config);CFG_INFO=cache;renderCfg();setDados(cache.abas||[],nome,cache.lancamentos||[]);msg("Atualizando…");}
   else{CFG=cfgDe(null);renderCfg();setDados([],nome,[]);msg("Carregando as planilhas da fazenda…");}
   try{const d=await rpc("dados",{p_token:SESSAO.token,p_fazenda:fid});if(FAZ!==fid)return;
-    await IDB.set("faz:"+fid,d);CFG=cfgDe(d.config);CFG_INFO=d;renderCfg();setDados(d.abas||[],nome,d.lancamentos||[]);mostrarSituacao();enviarFila();}
+    await IDB.set("faz:"+fid,d);capatazesDe(fid,d.capatazes);CFG=cfgDe(d.config);CFG_INFO=d;renderCfg();setDados(d.abas||[],nome,d.lancamentos||[]);mostrarSituacao();enviarFila();}
   catch(e){if(e.cod==="sessao")return sessaoCaiu();
     msg(cache?`Sem conexão: mostrando a cópia salva neste aparelho (${new Date(cache.gerado_em).toLocaleString("pt-BR")}).`:esc(e.message),true);}
 }
@@ -1163,6 +1241,7 @@ async function readFiles(list){
   const files=[...list].filter(f=>/\.(xlsx|xlsm|xls)$/i.test(f.name)&&!f.name.startsWith("~$"));
   if(!files.length){toast("Selecione arquivos do Excel (.xlsx).");return;}
   if(ONLINE&&!FAZ){toast("Escolha uma fazenda antes.");return;}
+  if(ONLINE&&!(USER&&USER.editor)){toast("Só técnicos e administradores enviam planilhas.");return;}
   const lidos=[],erros=[];
   for(const f of files){try{const wb=XLSX.read(await f.arrayBuffer(),{type:"array",cellDates:false});const r=parseWorkbook(wb,f.name);lidos.push([f.name,r.abas]);erros.push(...r.erros);}
     catch(e){erros.push(`${f.name}: não foi possível ler (${e.message}).`);}}
@@ -1268,12 +1347,18 @@ const pesoSacoDe=tipo=>{const p=produtoDe(up(tipo)||"");return p?p.saco:((up(tip
 const fS=v=>v==null||isNaN(v)?"–":Number.isInteger(+v)?f0(+v):f1(+v);
 const opts=(l)=>l.map(v=>`<option value="${esc(v)}"></option>`).join("");
 
+// retiros em que a pessoa pode lançar: capataz = só os liberados nesta fazenda; demais = todos
+function retirosLiberados(){if(!ONLINE||!USER||!USER.capataz)return null;const f=FAZS.find(x=>x.id===FAZ);return (f&&f.retiros||[]).map(up);}
 function renderLanc(){
   ULT=ultimosTratos();
-  const rets=retirosConhecidos(),atual=$("#lcRet").value||LS.get("lanc-ret");
+  const obs=ONLINE&&USER&&USER.observador,lib=retirosLiberados(),sem=lib&&!lib.length;
+  $("#lcForm").hidden=!!(obs||sem);$("#lcBloq").hidden=!(obs||sem);
+  $("#lcBloq").innerHTML=obs?"<b>Login de observador</b>: dá para ver todos os resultados, mas não lançar. Para lançar, entre com o seu usuário.":sem?"<b>Nenhum retiro liberado</b> para você lançar nesta fazenda. Fale com o administrador.":"";
+  const rets=lib?[...new Set([...retirosConhecidos().filter(r=>lib.includes(r)),...lib])].sort(natural):retirosConhecidos(),atual=$("#lcRet").value||LS.get("lanc-ret");
   const digitado=atual==="__novo"&&$("#lcRetNovo").value.trim();   // "Outro retiro" só fica se a pessoa digitou um nome
-  $("#lcRet").value=rets.includes(atual)?atual:digitado?"__novo":(rets[0]||"__novo");
-  $("#lcRetChips").innerHTML=rets.map(r=>`<button type="button" class="chip" data-ret="${esc(r)}">${esc(r)}</button>`).join("")+`<button type="button" class="chip" data-ret="__novo">+ Outro</button>`;
+  $("#lcRet").value=rets.includes(atual)?atual:digitado&&!lib?"__novo":(rets[0]||(lib?"":"__novo"));
+  $("#lcRetChips").innerHTML=rets.map(r=>`<button type="button" class="chip" data-ret="${esc(r)}">${esc(r)}</button>`).join("")+(lib?"":`<button type="button" class="chip" data-ret="__novo">+ Outro</button>`);
+  if(lib)$("#lcRetNovo").hidden=true;
   $("#lcRetChips").querySelectorAll("[data-ret]").forEach(b=>b.onclick=()=>escolherRetiro(b.dataset.ret));
   $("#lcCats").innerHTML=opts([...new Set(RAW.map(r=>r.cat).filter(Boolean))].sort(natural));
   const hoje=diaLocal(),d=$("#lcData");d.max=hoje;d.min="2020-01-01";if(!d.value||d.value>hoje)d.value=hoje;
@@ -1520,9 +1605,88 @@ $("#fmSalvar").onclick=async()=>{
   fmCarregar(true);if($("#v-formulas").classList.contains("on"))renderFormulas();
 };
 
+
+/* ======================= RETIROS ======================= */
+// área do cabeçalho da planilha: mês mais recente que tiver área
+function areasDasPlanilhas(){const m=new Map();
+  for(const [ret,g] of groupBy(ALL.filter(r=>!r.manual),r=>r.retiro)){const ms=[...groupBy(g,r=>r.mesKey)].sort((a,b)=>b[0]-a[0]);
+    for(const [,gm] of ms){const a=Math.max(0,...gm.map(r=>r.areaHdr||r.area||0));if(a>0){m.set(ret,{area:a,mes:gm[0].mes});break;}}}
+  return m;}
+function rtCarregar(force){if(force||!RT||!RT_SUJO){RT=structuredClone(CFG.retiros||[]);RT_SUJO=false;
+  if(CFG.retiros==null&&podeFm()){const ap=areasDasPlanilhas();for(const ret of retirosConhecidos())if(!RT.some(x=>x.nome===ret))RT.push({nome:ret,area:ap.get(ret)?.area??null,pastos:[],fonte:ap.get(ret)?"planilha "+ap.get(ret).mes:null});
+    if(RT.length)RT_SUJO=true;}}}    // primeira vez: já vem com as áreas das planilhas, para conferir e salvar
+function rtSujar(){RT_SUJO=true;$("#rtBarra").hidden=!podeFm();}
+function renderRetiros(){
+  rtCarregar();const ed=podeFm();
+  $("#v-retiros").classList.toggle("ro",!ed);document.querySelectorAll("#v-retiros .rt-ed").forEach(e=>e.hidden=!ed);$("#rtBarra").hidden=!(ed&&RT_SUJO);
+  $("#rtAviso").hidden=ed&&!(CFG.retiros==null&&RT_SUJO);
+  $("#rtAviso").innerHTML=!ed?"Somente técnicos e administradores alteram o cadastro dos retiros.":"Primeiro cadastro: os retiros já vieram com a área do cabeçalho da planilha mais recente. Confira e clique em <b>Salvar retiros</b>.";
+  // retiros com dados que ainda não estão no cadastro aparecem no fim, para cadastrar
+  const nomes=new Set(RT.map(x=>x.nome)),faltam=retirosConhecidos().filter(r=>!nomes.has(r));
+  const ap=areasDasPlanilhas(),ultMes=Math.max(0,...ALL.map(r=>r.mesKey));
+  const cards=RT.map((x,k)=>{
+    const g=ALL.filter(r=>r.retiro===x.nome),ap2=areaPastos(x),areaP=new Map((x.pastos||[]).map(p=>[p.nome,p.area]));
+    const nP=ap2.n||null,uMes=g.length?Math.max(...g.map(r=>r.mesKey)):null;
+    const usados=uMes?new Set(g.filter(r=>r.mesKey===uMes).map(r=>r.pasto)).size:0,lot=g.length?txLotacao(g):null;
+    const caps=(RET_CAPS.get(FAZ+"|"+x.nome)||[]);
+    return `<div class="card rt-card" data-rt="${k}">
+      <div class="row" style="justify-content:space-between;align-items:flex-start"><div class="field" style="flex:1;max-width:none"><label>Retiro</label>
+        <input data-f="nome" value="${esc(x.nome)}" ${g.length?"readonly title='Nome igual ao da planilha'":""} placeholder="Nome como na planilha"></div>
+        ${ed&&!g.length?`<button class="btn" data-delrt style="margin-top:22px">Excluir</button>`:""}</div>
+      <div class="fm-top" style="margin-top:10px">
+        <div class="field"><label>Área útil (ha)</label>${ap2.completa?`<input value="${f1(ap2.soma)}" disabled title="Soma dos pastos"><span class="small">soma das áreas dos ${ap2.n} pastos</span>`
+          :`<input data-f="area" type="number" min="0" step="0.1" value="${x.area??""}" placeholder="${ap.get(x.nome)?f1(ap.get(x.nome).area)+" (planilha)":"—"}"><span class="small">${x.fonte?"importada da "+esc(x.fonte):ap.get(x.nome)?"planilha: "+f1(ap.get(x.nome).area)+" ha ("+ap.get(x.nome).mes+")":""}</span>`}</div>
+        <div class="field"><label>Pastos já lançados</label><input value="${ap2.n}" disabled><span class="small">${ap2.com?`${ap2.com} de ${ap2.n} com área (soma ${f1(ap2.soma)} ha)`:"preencha a área de cada pasto abaixo (opcional)"}</span></div></div>
+      <div class="fm-tot" style="grid-template-columns:repeat(3,1fr)">
+        <div><span>Lotação (UA/ha)</span><b>${lot==null?"–":f2(lot)}</b></div>
+        <div><span>Pastos com trato ${uMes?"("+(g.find(r=>r.mesKey===uMes)||{}).mes+")":""}</span><b>${uMes?f0(usados):"–"}</b></div>
+        <div><span>Ocupação</span><b>${nP&&uMes?pc(Math.min(1,usados/nP)):"–"}</b></div></div>
+      <p class="small" style="margin:8px 0 0">Capataz(es) liberado(s): ${caps.length?caps.map(esc).join(", "):"nenhum"}</p>
+      <details class="rt-pastos"><summary>Área dos pastos (${ap2.com}/${ap2.n})</summary>
+        <p class="small">Os pastos vêm dos lançamentos; o nome é só informativo. Com a área de todos preenchida, a área do retiro passa a ser a soma.</p>
+        <div class="scroll"><table class="cfg"><thead><tr><th>Pasto</th><th class="n">Área (ha)</th></tr></thead><tbody>${
+          pastosVistos(x.nome).map(n=>`<tr data-ps="${esc(n)}"><td><b>${esc(n)}</b></td><td class="n"><input class="fm-n" data-f="parea" type="number" min="0" step="0.1" value="${areaP.get(n)??""}" aria-label="Área do pasto ${esc(n)}"></td></tr>`).join("")
+          ||`<tr><td colspan="2"><div class="empty">Nenhum pasto lançado neste retiro ainda.</div></td></tr>`}</tbody></table></div>
+      </details></div>`;});
+  $("#rtLista").innerHTML=cards.join("")+(faltam.length?`<div class="card"><h2>Retiros sem cadastro</h2><p class="note">Aparecem nas planilhas ou lançamentos.</p><p>${faltam.map(esc).join(", ")}</p>${ed?`<button class="btn" id="rtAddFaltam">Cadastrar estes retiros</button>`:""}</div>`:"")
+    ||`<div class="card"><div class="empty">Nenhum retiro.${ed?" Clique em Novo retiro.":""}</div></div>`;
+  // resumo
+  const areaTot=RT.reduce((s,x)=>s+(areaRetiro(x)||0),0),pTot=RT.reduce((s,x)=>s+areaPastos(x).com,0);
+  $("#kRet").innerHTML=kpi("Retiros cadastrados",f0(RT.length),faltam.length?faltam.length+" com dados ainda sem cadastro":"todos os retiros com dados","acc")
+    +kpi("Área útil cadastrada",f1(areaTot)+" ha",RT.filter(x=>areaRetiro(x)==null).length+" retiro(s) sem área","acc")
+    +kpi("Pastos com área",f0(pTot)+" de "+f0(RT.reduce((s,x)=>s+areaPastos(x).n,0)),"opcional; nomes vêm dos lançamentos","acc")
+    +kpi("Lotação geral",f2(txLotacao(ALL))+" UA/ha","mapa de gado do último mês ÷ área útil","acc");
+  const b=$("#rtAddFaltam");if(b)b.onclick=()=>{for(const r of faltam)RT.push({nome:r,area:ap.get(r)?.area??null,pastos:[],fonte:ap.get(r)?"planilha "+ap.get(r).mes:null});rtSujar();renderRetiros();};
+}
+$("#v-retiros").addEventListener("input",e=>{const el=e.target,f=el.dataset.f;if(!f||!podeFm())return;rtCarregar();
+  const card=el.closest("[data-rt]");if(!card)return;const x=RT[+card.dataset.rt],tr=el.closest("[data-ps]");
+  if(tr&&f==="parea"){x.pastos=x.pastos||[];const nm=tr.dataset.ps;let pp=x.pastos.find(q=>q.nome===nm);if(!pp)x.pastos.push(pp={nome:nm,area:null});pp.area=toNum(el.value);}
+  else if(f==="nome")x.nome=up(el.value)||"";else if(f==="area"){x.area=toNum(el.value);x.fonte=null;}
+  rtSujar();});
+$("#v-retiros").addEventListener("change",e=>{const f=e.target.dataset.f;if(f&&podeFm()&&f!=="nome")setTimeout(()=>{const a=document.activeElement,id=a&&a.dataset&&a.dataset.f?{f:a.dataset.f,rt:a.closest("[data-rt]")?.dataset.rt,ps:a.closest("[data-ps]")?.dataset.ps}:null;
+  const abertos=[...document.querySelectorAll("#rtLista details[open]")].map(d=>d.closest("[data-rt]").dataset.rt);
+  renderRetiros();abertos.forEach(k=>{const d=$(`#rtLista [data-rt="${k}"] details`);if(d)d.open=true;});
+  if(id){let el=$("#v-retiros").querySelector(`[data-rt="${id.rt}"]`);if(el&&id.ps!=null)el=el.querySelector(`[data-ps="${CSS.escape(id.ps)}"]`);el=el&&el.querySelector(`[data-f="${id.f}"]`);if(el)el.focus();}},0);});
+$("#v-retiros").addEventListener("click",e=>{const b=e.target.closest("button");if(!b||!podeFm())return;rtCarregar();const card=b.closest("[data-rt]"),x=card&&RT[+card.dataset.rt];
+  if(b.id==="rtAdd"){RT.push({nome:"",area:null,pastos:[],fonte:null});rtSujar();renderRetiros();const l=$("#rtLista .rt-card:last-of-type [data-f=nome]");l&&(l.focus(),l.scrollIntoView({block:"center"}));}
+  else if(b.id==="rtImport"){const ap=areasDasPlanilhas();let n=0;for(const y of RT)if(!areaPastos(y).completa&&!(y.area>0)&&ap.get(y.nome)){y.area=ap.get(y.nome).area;y.fonte="planilha "+ap.get(y.nome).mes;n++;}
+    toast(n?`${n} área(s) importada(s) das planilhas. Confira e salve.`:"Nenhum retiro sem área para importar.");if(n){rtSujar();renderRetiros();}}
+  else if(x&&b.hasAttribute("data-delrt")){if(b.dataset.ok!=="1"){b.dataset.ok="1";b.textContent="Confirmar";b.classList.add("primary");return;}RT.splice(+card.dataset.rt,1);rtSujar();renderRetiros();}
+});
+$("#rtDesfazer").onclick=()=>{RT=structuredClone(CFG.retiros||[]);RT_SUJO=false;renderRetiros();toast("Alterações desfeitas.");};
+$("#rtSalvar").onclick=async()=>{
+  const lista=RT.filter(x=>x.nome).map(x=>({nome:x.nome,area:x.area>0?+x.area:null,fonte:x.fonte||null,
+    pastos:(x.pastos||[]).filter(p=>p.nome&&p.area>0).map(p=>({nome:p.nome,area:+p.area}))}));
+  const nm=lista.map(x=>x.nome);if(new Set(nm).size!==nm.length){toast("Há retiros com o mesmo nome.");return;}
+  RT_SUJO=false;$("#rtBarra").hidden=true;
+  const ok=await salvarCfg(Object.assign({},CFG,{retiros:lista}),ONLINE?"Retiros salvos para todos desta fazenda.":"Retiros salvos.");
+  if(!ok){RT_SUJO=true;$("#rtBarra").hidden=false;return;}
+  RT=structuredClone(CFG.retiros||[]);if($("#v-retiros").classList.contains("on"))renderRetiros();
+};
+
 /* ======================= EXPORTAR ======================= */
 function baseRows(){return filtered().map(r=>({Arquivo:r.arquivo,Retiro:r.retiro,Pasto:r.pasto,Ano:r.ano,"Mês":r.mes,"Período":r.periodo,"Data Fornecimento":dt(r.data),"Próximo Trato":dt(r.prox),
-  Categoria:r.cat,"Categoria Padronizada":r.catP,"Tipo de sal":r.tipo,"Quant. Animais":r.qtd,"Animais Próximo Trato":r.qProx,"Peso Estimado":r.peso,"Sacos":r.sacos,"kg Fornecidos":r.kg,"Dias":r.dias,"Status Intervalo":r.stInt,
+  Categoria:r.cat,"Categoria Padronizada":r.catP,"Tipo de sal":r.tipo,"Quant. Animais":r.qtd,"Animais Próximo Trato":r.qProx,"Peso Estimado":r.peso,"Sacos":r.sacos,"kg Fornecidos":r.kg,"Dias":r.dias,"Dias Considerados":r.diasV,"Base da Média (saída)":r.fonteEst,"Status Intervalo":r.stInt,
   "Cabeças-dia":r.cabDia,"Consumo kg/cab/dia":r.cons==null?null:+r.cons.toFixed(4),"Meta kg":r.meta==null?null:+r.meta.toFixed(4),"Limite Mín":r.lmin==null?null:+r.lmin.toFixed(4),"Limite Máx":r.lmax==null?null:+r.lmax.toFixed(4),
   "Status Consumo":r.status,"Saída Fábrica (retiro/mês)":r.saida,Alertas:r.alertas.join("; ")}));}
 document.getElementById("export").onclick=async()=>{
@@ -1535,20 +1699,20 @@ document.getElementById("export").onclick=async()=>{
 /* ======================= AJUSTES ======================= */
 function renderCfg(){
   const t=document.getElementById("cfgProd");
-  t.innerHTML=`<thead><tr><th>Texto no "Tipo de sal"</th><th class="n">% do peso vivo</th><th class="n">Peso do saco (kg)</th><th class="n">Preço R$/kg</th><th></th></tr></thead><tbody>`+
-    CFG.produtos.map((p,i)=>{const fl=formulaDoProduto(p),ck=fl?calcFormula(fl).ckg:null;return `<tr><td><input id="pc${i}" value="${esc(p.chave)}" aria-label="Texto do produto ${i+1}"></td><td><input id="pp${i}" type="number" step="0.01" min="0" value="${p.pv}" aria-label="% PV produto ${i+1}"></td><td><input id="ps${i}" type="number" step="1" min="1" value="${p.saco}" aria-label="Peso do saco produto ${i+1}"></td><td>${ck!=null?`<input id="pr${i}" value="${nf(2).format(ck)}" disabled title="Custo da fórmula ${esc(fl.nome)}" aria-label="Preço do produto ${i+1} (da fórmula)"><span class="small"> fórmula</span>`:`<input id="pr${i}" type="number" step="0.01" min="0" value="${p.preco??""}" placeholder="–" aria-label="Preço produto ${i+1}">`}</td><td><button class="btn editor-btn" data-del="${i}" aria-label="Remover produto ${i+1}">Remover</button></td></tr>`;}).join("")+"</tbody>";
+  t.innerHTML=`<thead><tr><th>Texto no "Tipo de sal"</th><th class="n">% do peso vivo</th><th class="n">Peso do saco (kg)</th><th class="n" title="Sem fornecimento por mais dias que isso = o lote saiu. Em branco: média do intervalo + 50%">Máx. sem fornecimento (dias)</th><th class="n">Preço R$/kg</th><th></th></tr></thead><tbody>`+
+    CFG.produtos.map((p,i)=>{const fl=formulaDoProduto(p),ck=fl?calcFormula(fl).ckg:null;return `<tr><td><input id="pc${i}" value="${esc(p.chave)}" aria-label="Texto do produto ${i+1}"></td><td><input id="pp${i}" type="number" step="0.01" min="0" value="${p.pv}" aria-label="% PV produto ${i+1}"></td><td><input id="ps${i}" type="number" step="1" min="1" value="${p.saco}" aria-label="Peso do saco produto ${i+1}"></td><td><input id="pd${i}" type="number" step="1" min="1" value="${p.dm??""}" placeholder="média + 50%" aria-label="Máximo de dias sem fornecimento, produto ${i+1}"></td><td>${ck!=null?`<input id="pr${i}" value="${nf(2).format(ck)}" disabled title="Custo da fórmula ${esc(fl.nome)}" aria-label="Preço do produto ${i+1} (da fórmula)"><span class="small"> fórmula</span>`:`<input id="pr${i}" type="number" step="0.01" min="0" value="${p.preco??""}" placeholder="–" aria-label="Preço produto ${i+1}">`}</td><td><button class="btn editor-btn" data-del="${i}" aria-label="Remover produto ${i+1}">Remover</button></td></tr>`;}).join("")+"</tbody>";
   t.querySelectorAll("[data-del]").forEach(b=>{b.hidden=ONLINE&&!(USER&&USER.editor);b.onclick=()=>{readCfg();CFG.produtos.splice(+b.dataset.del,1);renderCfg();};});
   document.getElementById("cfgRules").innerHTML=[
-    ["cTol","Tolerância da meta (±%)",CFG.tolerancia],["cDias","Intervalo máximo entre tratos (dias)",CFG.diasMax],["cAlto","Alerta de consumo alto (× limite máx.)",CFG.fatorAlto],
+    ["cTol","Tolerância da meta (±%)",CFG.tolerancia],["cAlto","Alerta de consumo alto (× limite máx.)",CFG.fatorAlto],
     ["cMud","Alerta de mudança de cabeças (%)",CFG.mudanca],["cUA","Peso da UA (kg)",CFG.pesoUA]].map(([id,l,v])=>`<div class="field" style="max-width:none"><label for="${id}">${l}</label><input id="${id}" type="number" step="any" value="${v}"></div>`).join("")+
     `<div class="field" style="max-width:none"><label for="cSeca">Meses de seca (números, ex.: 5,6,7,8,9)</label><input id="cSeca" value="${CFG.mesesSeca.join(",")}"></div>`;
   $("#cfgInfo").textContent=ONLINE?(CFG_INFO&&CFG_INFO.config_atualizado_em?`Salvos para todos os usuários desta fazenda. Última alteração: ${CFG_INFO.config_atualizado_por||"?"}, ${new Date(CFG_INFO.config_atualizado_em).toLocaleString("pt-BR",{dateStyle:"short",timeStyle:"short"})}.`:"Ainda com os valores padrão nesta fazenda.")
     +(USER&&!USER.editor?" Só técnicos e administradores alteram.":""):"Os ajustes ficam salvos neste aparelho.";
 }
 function readCfg(){
-  CFG.produtos=CFG.produtos.map((p,i)=>({chave:(document.getElementById("pc"+i)?.value||"").trim().toUpperCase(),pv:toNum(document.getElementById("pp"+i)?.value)??0,saco:toNum(document.getElementById("ps"+i)?.value)||30,preco:document.getElementById("pr"+i)?.disabled?p.preco:toNum(document.getElementById("pr"+i)?.value)}));
+  CFG.produtos=CFG.produtos.map((p,i)=>({chave:(document.getElementById("pc"+i)?.value||"").trim().toUpperCase(),pv:toNum(document.getElementById("pp"+i)?.value)??0,saco:toNum(document.getElementById("ps"+i)?.value)||30,dm:toNum(document.getElementById("pd"+i)?.value)||null,preco:document.getElementById("pr"+i)?.disabled?p.preco:toNum(document.getElementById("pr"+i)?.value)}));
   const g=id=>toNum(document.getElementById(id)?.value);
-  CFG.tolerancia=g("cTol")??25;CFG.diasMax=g("cDias")??30;CFG.fatorAlto=g("cAlto")??3;CFG.mudanca=g("cMud")??30;CFG.pesoUA=g("cUA")||450;
+  CFG.tolerancia=g("cTol")??25;CFG.fatorAlto=g("cAlto")??3;CFG.mudanca=g("cMud")??30;CFG.pesoUA=g("cUA")||450;
   CFG.mesesSeca=(document.getElementById("cSeca")?.value||"").split(/[^\d]+/).map(Number).filter(n=>n>=1&&n<=12);
 }
 document.getElementById("addProd").onclick=()=>{readCfg();CFG.produtos.push({chave:"",pv:0.1,saco:30,preco:null});renderCfg();};
@@ -1561,7 +1725,7 @@ async function salvarCfg(novo,txt){
   renderCfg();ALL=compute(RAW);refreshFilters();render();carregarHistCfg();toast(txt);return true;
 }
 document.getElementById("applyCfg").onclick=()=>{readCfg();CFG.produtos=CFG.produtos.filter(p=>p.chave);salvarCfg(CFG,ONLINE?"Ajustes salvos para todos os usuários desta fazenda.":"Ajustes salvos.");};
-document.getElementById("resetCfg").onclick=()=>salvarCfg(Object.assign(structuredClone(DEFAULT_CFG),{insumos:CFG.insumos||[],formulas:CFG.formulas||[]}),"Ajustes padrão restaurados (fórmulas e insumos mantidos).");
+document.getElementById("resetCfg").onclick=()=>salvarCfg(Object.assign(structuredClone(DEFAULT_CFG),{insumos:CFG.insumos||[],formulas:CFG.formulas||[],retiros:CFG.retiros||null}),"Ajustes padrão restaurados (fórmulas, insumos e retiros mantidos).");
 async function carregarHistCfg(){
   if(!(ONLINE&&USER&&USER.editor&&FAZ))return;
   try{const h=await rpc("historico_config",{p_token:SESSAO.token,p_fazenda:FAZ});
@@ -1591,30 +1755,53 @@ $("#fzForm").addEventListener("submit",async e=>{e.preventDefault();$("#fzMsg").
     $("#fzMsg").textContent=r.criada?"Fazenda cadastrada.":"Fazenda atualizada.";$("#fzSenha").value="";await carregarFazendasAdm();editarFazenda(FZ_ADM.find(f=>f.id===r.id));$("#fzMsg").textContent=r.criada?"Fazenda cadastrada.":"Fazenda atualizada.";
     await atualizarListaFazendas();if(!FAZ&&FAZS.length)abrirFazenda(FAZS[0].id);}
   catch(err){if(err.cod==="sessao")return sessaoCaiu();$("#fzMsg").textContent=err.message;}});
+let RET_ADM={};
 async function carregarPessoas(){
   if(!(USER&&USER.admin))return;
-  try{[PE_ADM,FZ_ADM]=await Promise.all([rpc("adm_listar_pessoas",{p_token:SESSAO.token}),rpc("adm_listar_fazendas",{p_token:SESSAO.token})]);}
+  try{[PE_ADM,FZ_ADM,RET_ADM]=await Promise.all([rpc("adm_listar_pessoas",{p_token:SESSAO.token}),rpc("adm_listar_fazendas",{p_token:SESSAO.token}),rpc("adm_retiros",{p_token:SESSAO.token}).catch(()=>({}))]);}
   catch(e){if(e.cod==="sessao")return sessaoCaiu();$("#peLista").innerHTML=`<div class="empty">${esc(e.message)}</div>`;return;}
-  const nomeFz=id=>(FZ_ADM.find(f=>f.id===id)||{}).nome||id;
-  $("#peLista").innerHTML=table([{t:"Pessoa",f:p=>`<b>${esc(p.nome)}</b><br><span class="small">${esc(p.usuario)}</span>`},{t:"Papel",f:p=>papelNome(p.papel)},
-    {t:"Fazendas",f:p=>p.papel==="adm"?"todas":esc(p.fazendas.map(nomeFz).join(", ")||"nenhuma")},{t:"Situação",f:p=>p.ativa?'<span class="pill p-ok">Ativa</span>':'<span class="pill p-none">Desativada</span>'},
-    {t:"",f:p=>`<button class="btn" data-pe="${p.id}">Editar</button>`}],PE_ADM);
+  for(const f of FZ_ADM)capatazesDe(f.id,PE_ADM.filter(p=>p.papel==="capataz"&&p.ativa&&p.fazendas.includes(f.id)).map(p=>({nome:p.nome,retiros:(p.retiros||{})[f.id]||[]})));   // aba Retiros já atualizada
+  // agrupada por fazenda: administradores (todas) primeiro; quem tem várias fazendas aparece em cada uma
+  const linha=(p,fid)=>`<tr><td><b>${esc(p.nome)}</b><br><span class="small">${esc(p.usuario)}</span></td><td>${papelNome(p.papel)}${p.papel==="capataz"&&fid?`<br><span class="small">${esc(((p.retiros||{})[fid]||[]).join(", ")||"nenhum retiro liberado")}</span>`:""}</td>
+    <td>${p.ativa?'<span class="pill p-ok">Ativa</span>':'<span class="pill p-none">Desativada</span>'}</td><td><button class="btn" data-pe="${p.id}">Editar</button></td></tr>`;
+  const tab=(lista,fid)=>`<table><thead><tr><th>Pessoa</th><th>Papel</th><th>Situação</th><th></th></tr></thead><tbody>${lista.map(p=>linha(p,fid)).join("")}</tbody></table>`;
+  const ordem={adm:0,tecnico:1,capataz:2},srt=l=>l.sort((a,b)=>(b.ativa-a.ativa)||(ordem[a.papel]-ordem[b.papel])||a.nome.localeCompare(b.nome));
+  const adms=srt(PE_ADM.filter(p=>p.papel==="adm")),sem=srt(PE_ADM.filter(p=>p.papel!=="adm"&&!p.fazendas.length));
+  let h=adms.length?`<div class="pe-grupo"><span>Administradores</span><span class="small">todas as fazendas</span></div>${tab(adms)}`:"";
+  for(const f of FZ_ADM){const l=srt(PE_ADM.filter(p=>p.papel!=="adm"&&p.fazendas.includes(f.id)));
+    h+=`<div class="pe-grupo"><span>${esc(f.nome)}${f.ativa===false?" (inativa)":""}</span><span class="small">${l.length} pessoa(s)</span></div>${l.length?tab(l,f.id):'<p class="small">Ninguém ligado a esta fazenda.</p>'}`;}
+  if(sem.length)h+=`<div class="pe-grupo"><span>Sem fazenda</span></div>${tab(sem)}`;
+  $("#peLista").innerHTML=h||'<div class="empty">Nenhuma pessoa.</div>';
   document.querySelectorAll("[data-pe]").forEach(b=>b.onclick=()=>editarPessoa(PE_ADM.find(p=>p.id===+b.dataset.pe)));
   editarPessoa(PE_EDIT?PE_ADM.find(p=>p.id===PE_EDIT.id):null);
 }
 let PE_EDIT=null;
 function editarPessoa(p){
   PE_EDIT=p||null;$("#peTit").textContent=p?`Editar: ${p.nome}`:"Nova pessoa";$("#peNome").value=p?p.nome:"";$("#peUsr").value=p?p.usuario:"";$("#peSenha").value="";
-  $("#peSenha").placeholder=p?"deixe em branco para manter a atual":"";$("#pePapel").value=p?p.papel:"tecnico";$("#peAtiva").checked=p?p.ativa:true;$("#peMsg").textContent="";
-  $("#peFz").innerHTML=FZ_ADM.map(f=>`<label><input type="checkbox" value="${esc(f.id)}"${p&&p.fazendas.includes(f.id)?" checked":""}> ${esc(f.nome)}</label>`).join("")||'<span class="small">Cadastre fazendas primeiro.</span>';
-  $("#peFzBox").hidden=$("#pePapel").value!=="tecnico";
+  $("#peSenha").placeholder=p?"deixe em branco para manter a atual":"";$("#pePapel").value=p?p.papel:"capataz";$("#peAtiva").checked=p?p.ativa:true;$("#peMsg").textContent="";
+  peDesenharFz(p);
 }
-$("#pePapel").onchange=()=>{$("#peFzBox").hidden=$("#pePapel").value!=="tecnico";};
+// fazendas liberadas; para capataz, ao marcar a fazenda aparecem os retiros dela para liberar o lançamento
+function peDesenharFz(p){
+  const papel=$("#pePapel").value,cap=papel==="capataz",marc=new Set(p?p.fazendas:[...document.querySelectorAll("#peFz input[data-fz]:checked")].map(i=>i.value));
+  const retSel=fid=>p?((p.retiros||{})[fid]||[]):[...document.querySelectorAll(`#peFz input[data-rfz="${CSS.escape(fid)}"]:checked`)].map(i=>i.value);
+  $("#peFz").innerHTML=FZ_ADM.map(f=>{const on=marc.has(f.id),rs=(RET_ADM[f.id]||[]),sel=new Set(retSel(f.id));
+    return `<label class="chk"><input type="checkbox" data-fz value="${esc(f.id)}"${on?" checked":""}> ${esc(f.nome)}</label>`+
+      (cap&&on?`<div class="pe-ret">${rs.length?rs.map(r=>`<label class="chk"><input type="checkbox" data-rfz="${esc(f.id)}" value="${esc(r)}"${sel.has(r)?" checked":""}> ${esc(r)}</label>`).join(""):'<span class="small">Esta fazenda ainda não tem retiros (envie planilhas ou cadastre na aba Retiros).</span>'}</div>`:"");}).join("")
+    ||'<span class="small">Cadastre fazendas primeiro.</span>';
+  $("#peFz").querySelectorAll("input[data-fz]").forEach(i=>i.onchange=()=>peDesenharFz(null));
+  $("#peFzBox").hidden=papel==="adm";
+  $("#peFzTit").textContent=cap?"Fazendas e retiros liberados para lançar":"Fazendas liberadas";
+  $("#peSenhaLbl").textContent=cap?"Senha (6+ caracteres)":"Senha (8+ caracteres)";
+}
+$("#pePapel").onchange=()=>peDesenharFz(null);
 $("#peNova").onclick=()=>editarPessoa(null);
 $("#peForm").addEventListener("submit",async e=>{e.preventDefault();$("#peMsg").textContent="Salvando…";
-  const fz=[...document.querySelectorAll("#peFz input:checked")].map(i=>i.value);
+  const fz=[...document.querySelectorAll("#peFz input[data-fz]:checked")].map(i=>i.value),papel=$("#pePapel").value;
+  const ret={};if(papel==="capataz")for(const f of fz)ret[f]=[...document.querySelectorAll(`#peFz input[data-rfz="${CSS.escape(f)}"]:checked`)].map(i=>i.value);
+  if(papel==="capataz"&&fz.length&&!Object.values(ret).some(l=>l.length)){$("#peMsg").textContent="Marque ao menos um retiro para o capataz lançar.";return;}
   try{const id=await rpc("adm_salvar_pessoa",{p_token:SESSAO.token,p_id:PE_EDIT?PE_EDIT.id:null,p_nome:$("#peNome").value,p_usuario:$("#peUsr").value.trim().toLowerCase(),
-      p_senha:$("#peSenha").value||null,p_papel:$("#pePapel").value,p_ativa:$("#peAtiva").checked,p_fazendas:fz});
+      p_senha:$("#peSenha").value||null,p_papel:papel,p_ativa:$("#peAtiva").checked,p_fazendas:fz,p_retiros:papel==="capataz"?ret:null});
     PE_EDIT={id};await carregarPessoas();$("#peMsg").textContent="Salvo.";}
   catch(err){if(err.cod==="sessao")return sessaoCaiu();$("#peMsg").textContent=err.message;}});
 /* ---------- minha senha ---------- */
@@ -1657,7 +1844,7 @@ document.getElementById("demo").onclick=loadDemo;
 /* ======================= INÍCIO ======================= */
 (async()=>{
   if(typeof XLSX==="undefined"){msg("Não foi possível carregar o leitor de Excel. Verifique a conexão com a internet e recarregue a página.",true);}
-  if(ONLINE){const s=LS.get("sessao");if(s&&s.token)iniciar(s);else mostrarLogin();return;}
+  if(ONLINE){const s=SESS.get();if(s&&s.token)iniciar(s);else{IDB.limpar().catch(()=>{});mostrarLogin();}return;}   // sem sessão: não deixa cópia dos dados no aparelho
   // sem banco: modo local. As planilhas inseridas ficam salvas neste aparelho.
   aplicarPapel();renderCfg();route();
   const loc=await IDB.get("local-abas"),locL=await IDB.get("local-lanc");

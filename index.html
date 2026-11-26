@@ -751,10 +751,15 @@ function animaisSup(rows){
 function saidaFabrica(rows){let s=0;for(const [,g] of groupBy(rows,r=>r.retiro+"|"+r.mesKey))s+=Math.max(0,...g.map(r=>r.saida||0));return s;}
 // área útil cadastrada na aba Retiros (soma dos pastos, se houver); null = usa a da planilha
 function retiroCad(nome,c=CFG){return (c.retiros||[]).find(x=>x.nome===nome)||null;}
-// pastos que já apareceram nos lançamentos (planilhas e app) — nomes congelados
-function pastosVistos(ret){return [...new Set(RAW.filter(r=>up(r.retiro)===ret).map(r=>up(r.pasto)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR",{numeric:true}));}
-function areaPastos(x){const vis=pastosVistos(x.nome),m=new Map((x.pastos||[]).filter(p=>p.area>0).map(p=>[p.nome,+p.area]));
-  const com=vis.filter(n=>m.has(n));return {n:vis.length,com:com.length,soma:com.reduce((s,n)=>s+m.get(n),0),completa:vis.length>0&&com.length===vis.length};}
+// mesmo pasto escrito de jeitos diferentes: ignora espaços e zeros à esquerda de cada número (07 = 7; PQ 01 = PQ01 = PQ1)
+const normPasto=v=>(up(v)||"").replace(/\s+/g,"").replace(/(^|[^0-9])0+(?=[0-9])/g,"$1");
+// pastos que já apareceram nos lançamentos (planilhas e app) — nomes congelados; um por pasto, com a grafia mais usada
+function pastosVistos(ret){const m=new Map();
+  for(const r of RAW){if(up(r.retiro)!==ret||!r.pasto)continue;const k=normPasto(r.pasto);if(!k)continue;const g=m.get(k)||m.set(k,new Map()).get(k);const n=up(r.pasto);g.set(n,(g.get(n)||0)+1);}
+  return [...m].map(([k,g])=>{const v=[...g].sort((a,b)=>b[1]-a[1]);return {key:k,nome:v[0][0],outros:v.slice(1).map(x=>x[0])};})
+    .sort((a,b)=>a.key.localeCompare(b.key,"pt-BR",{numeric:true}));}
+function areaPastos(x){const vis=pastosVistos(x.nome),m=new Map();for(const p of x.pastos||[])if(p.area>0)m.set(normPasto(p.nome),+p.area);
+  const com=vis.filter(v=>m.has(v.key));return {n:vis.length,com:com.length,soma:com.reduce((s,v)=>s+m.get(v.key),0),completa:vis.length>0&&com.length===vis.length};}
 function areaRetiro(x){if(!x)return null;const a=areaPastos(x);return a.completa?a.soma:(x.area>0?+x.area:null);}
 const areaCadastrada=nome=>areaRetiro(retiroCad(nome));
 function txLotacao(rows){
@@ -1625,7 +1630,7 @@ function renderRetiros(){
   const nomes=new Set(RT.map(x=>x.nome)),faltam=retirosConhecidos().filter(r=>!nomes.has(r));
   const ap=areasDasPlanilhas(),ultMes=Math.max(0,...ALL.map(r=>r.mesKey));
   const cards=RT.map((x,k)=>{
-    const g=ALL.filter(r=>r.retiro===x.nome),ap2=areaPastos(x),areaP=new Map((x.pastos||[]).map(p=>[p.nome,p.area]));
+    const g=ALL.filter(r=>r.retiro===x.nome),ap2=areaPastos(x),areaP=new Map((x.pastos||[]).map(p=>[normPasto(p.nome),p.area]));
     const nP=ap2.n||null,uMes=g.length?Math.max(...g.map(r=>r.mesKey)):null;
     const usados=uMes?new Set(g.filter(r=>r.mesKey===uMes).map(r=>r.pasto)).size:0,lot=g.length?txLotacao(g):null;
     const caps=(RET_CAPS.get(FAZ+"|"+x.nome)||[]);
@@ -1645,7 +1650,7 @@ function renderRetiros(){
       <details class="rt-pastos"><summary>Área dos pastos (${ap2.com}/${ap2.n})</summary>
         <p class="small">Os pastos vêm dos lançamentos; o nome é só informativo. Com a área de todos preenchida, a área do retiro passa a ser a soma.</p>
         <div class="scroll"><table class="cfg"><thead><tr><th>Pasto</th><th class="n">Área (ha)</th></tr></thead><tbody>${
-          pastosVistos(x.nome).map(n=>`<tr data-ps="${esc(n)}"><td><b>${esc(n)}</b></td><td class="n"><input class="fm-n" data-f="parea" type="number" min="0" step="0.1" value="${areaP.get(n)??""}" aria-label="Área do pasto ${esc(n)}"></td></tr>`).join("")
+          pastosVistos(x.nome).map(v=>`<tr data-ps="${esc(v.key)}"><td><b>${esc(v.nome)}</b>${v.outros.length?`<br><span class="small">também lançado como ${v.outros.map(esc).join(", ")}</span>`:""}</td><td class="n"><input class="fm-n" data-f="parea" type="number" min="0" step="0.1" value="${areaP.get(v.key)??""}" aria-label="Área do pasto ${esc(v.nome)}"></td></tr>`).join("")
           ||`<tr><td colspan="2"><div class="empty">Nenhum pasto lançado neste retiro ainda.</div></td></tr>`}</tbody></table></div>
       </details></div>`;});
   $("#rtLista").innerHTML=cards.join("")+(faltam.length?`<div class="card"><h2>Retiros sem cadastro</h2><p class="note">Aparecem nas planilhas ou lançamentos.</p><p>${faltam.map(esc).join(", ")}</p>${ed?`<button class="btn" id="rtAddFaltam">Cadastrar estes retiros</button>`:""}</div>`:"")
@@ -1660,7 +1665,8 @@ function renderRetiros(){
 }
 $("#v-retiros").addEventListener("input",e=>{const el=e.target,f=el.dataset.f;if(!f||!podeFm())return;rtCarregar();
   const card=el.closest("[data-rt]");if(!card)return;const x=RT[+card.dataset.rt],tr=el.closest("[data-ps]");
-  if(tr&&f==="parea"){x.pastos=x.pastos||[];const nm=tr.dataset.ps;let pp=x.pastos.find(q=>q.nome===nm);if(!pp)x.pastos.push(pp={nome:nm,area:null});pp.area=toNum(el.value);}
+  if(tr&&f==="parea"){x.pastos=(x.pastos||[]).filter(q=>!(normPasto(q.nome)===tr.dataset.ps&&q.nome!==tr.dataset.ps));const nm=tr.dataset.ps;
+    let pp=x.pastos.find(q=>q.nome===nm);if(!pp)x.pastos.push(pp={nome:nm,area:null});pp.area=toNum(el.value);}
   else if(f==="nome")x.nome=up(el.value)||"";else if(f==="area"){x.area=toNum(el.value);x.fonte=null;}
   rtSujar();});
 $("#v-retiros").addEventListener("change",e=>{const f=e.target.dataset.f;if(f&&podeFm()&&f!=="nome")setTimeout(()=>{const a=document.activeElement,id=a&&a.dataset&&a.dataset.f?{f:a.dataset.f,rt:a.closest("[data-rt]")?.dataset.rt,ps:a.closest("[data-ps]")?.dataset.ps}:null;
@@ -1676,7 +1682,7 @@ $("#v-retiros").addEventListener("click",e=>{const b=e.target.closest("button");
 $("#rtDesfazer").onclick=()=>{RT=structuredClone(CFG.retiros||[]);RT_SUJO=false;renderRetiros();toast("Alterações desfeitas.");};
 $("#rtSalvar").onclick=async()=>{
   const lista=RT.filter(x=>x.nome).map(x=>({nome:x.nome,area:x.area>0?+x.area:null,fonte:x.fonte||null,
-    pastos:(x.pastos||[]).filter(p=>p.nome&&p.area>0).map(p=>({nome:p.nome,area:+p.area}))}));
+    pastos:[...new Map((x.pastos||[]).filter(p=>p.nome&&p.area>0).map(p=>[normPasto(p.nome),{nome:normPasto(p.nome),area:+p.area}])).values()]}));
   const nm=lista.map(x=>x.nome);if(new Set(nm).size!==nm.length){toast("Há retiros com o mesmo nome.");return;}
   RT_SUJO=false;$("#rtBarra").hidden=true;
   const ok=await salvarCfg(Object.assign({},CFG,{retiros:lista}),ONLINE?"Retiros salvos para todos desta fazenda.":"Retiros salvos.");
